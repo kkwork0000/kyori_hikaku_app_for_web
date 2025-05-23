@@ -1,0 +1,279 @@
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MapPin, Plus, Trash2, Calculator, Car, MapPinIcon as Walking, Bike, Train } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import ResultsTable from "./ResultsTable";
+import AdModal from "./AdModal";
+import { getUserId, getCurrentMonth, updateUserUsage } from "@/lib/userTracking";
+
+type TravelMode = "driving" | "walking" | "transit" | "bicycling";
+
+interface DistanceResult {
+  destination: string;
+  distance: string;
+  duration: string;
+  distanceValue?: number;
+  durationValue?: number;
+  error?: string;
+}
+
+export default function DistanceForm() {
+  const [origin, setOrigin] = useState("");
+  const [destinations, setDestinations] = useState([""]);
+  const [travelMode, setTravelMode] = useState<TravelMode>("driving");
+  const [results, setResults] = useState<DistanceResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [pendingCalculation, setPendingCalculation] = useState<{ origin: string; destinations: string[] } | null>(null);
+  const [errors, setErrors] = useState<{ origin?: string; destinations?: string }>({});
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const userId = getUserId();
+  const currentMonth = getCurrentMonth();
+
+  const calculateMutation = useMutation({
+    mutationFn: async (data: { origin: string; destinations: string[]; travelMode: TravelMode; userId: string }) => {
+      const response = await apiRequest("POST", "/api/calculate-distances", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setResults(data.results);
+      setShowResults(true);
+      updateUserUsage(userId, currentMonth);
+      queryClient.invalidateQueries({ queryKey: ["/api/usage", userId, currentMonth] });
+      toast({
+        title: "計算完了",
+        description: "距離と時間の計算が完了しました",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "計算中にエラーが発生しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const checkUsageMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/usage/${userId}/${currentMonth}`);
+      if (!response.ok) throw new Error("Failed to check usage");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.usageCount >= 3) {
+        setShowAdModal(true);
+      } else {
+        // Proceed with calculation
+        if (pendingCalculation) {
+          calculateMutation.mutate({
+            ...pendingCalculation,
+            travelMode,
+            userId,
+          });
+          setPendingCalculation(null);
+        }
+      }
+    },
+  });
+
+  const addDestination = () => {
+    if (destinations.length < 5) {
+      setDestinations([...destinations, ""]);
+    } else {
+      toast({
+        title: "制限に達しました",
+        description: "最大5箇所まで追加できます",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeDestination = (index: number) => {
+    if (destinations.length > 1) {
+      setDestinations(destinations.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateDestination = (index: number, value: string) => {
+    const newDestinations = [...destinations];
+    newDestinations[index] = value;
+    setDestinations(newDestinations);
+  };
+
+  const validateForm = () => {
+    const newErrors: { origin?: string; destinations?: string } = {};
+    
+    if (!origin.trim()) {
+      newErrors.origin = "出発地を入力してください";
+    }
+    
+    const validDestinations = destinations.filter(dest => dest.trim() !== "");
+    if (validDestinations.length === 0) {
+      newErrors.destinations = "最低1つの目的地を入力してください";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    const validDestinations = destinations.filter(dest => dest.trim() !== "");
+    setPendingCalculation({ origin: origin.trim(), destinations: validDestinations });
+    checkUsageMutation.mutate();
+  };
+
+  const handleAdComplete = () => {
+    setShowAdModal(false);
+    if (pendingCalculation) {
+      calculateMutation.mutate({
+        ...pendingCalculation,
+        travelMode,
+        userId,
+      });
+      setPendingCalculation(null);
+    }
+  };
+
+  const travelModes = [
+    { mode: "driving" as TravelMode, label: "車", icon: Car },
+    { mode: "walking" as TravelMode, label: "徒歩", icon: Walking },
+    { mode: "transit" as TravelMode, label: "公共交通", icon: Train },
+    { mode: "bicycling" as TravelMode, label: "自転車", icon: Bike },
+  ];
+
+  return (
+    <>
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          出発地と目的地を入力
+        </h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Origin Input */}
+          <div>
+            <Label htmlFor="origin" className="text-sm font-medium text-text-secondary">
+              出発地 <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="origin"
+              value={origin}
+              onChange={(e) => setOrigin(e.target.value)}
+              placeholder="例: 東京駅"
+              className="mt-2"
+            />
+            {errors.origin && (
+              <p className="text-red-500 text-sm mt-1">{errors.origin}</p>
+            )}
+          </div>
+
+          {/* Destinations Input */}
+          <div>
+            <Label className="text-sm font-medium text-text-secondary">
+              目的地 <span className="text-red-500">*</span>
+              <span className="text-xs text-text-secondary ml-1">(最大5箇所)</span>
+            </Label>
+            
+            <div className="space-y-3 mt-2">
+              {destinations.map((destination, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={destination}
+                    onChange={(e) => updateDestination(index, e.target.value)}
+                    placeholder={`例: ${index === 0 ? '新宿駅' : '渋谷駅'}`}
+                    className="flex-1"
+                  />
+                  {destinations.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeDestination(index)}
+                      className="text-red-500 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addDestination}
+              disabled={destinations.length >= 5}
+              className="mt-3 flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              目的地を追加
+            </Button>
+            {errors.destinations && (
+              <p className="text-red-500 text-sm mt-1">{errors.destinations}</p>
+            )}
+          </div>
+
+          {/* Travel Mode Selection */}
+          <div>
+            <Label className="text-sm font-medium text-text-secondary">移動手段</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {travelModes.map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <Button
+                    key={mode.mode}
+                    type="button"
+                    variant={travelMode === mode.mode ? "default" : "outline"}
+                    onClick={() => setTravelMode(mode.mode)}
+                    className="p-3 h-auto flex flex-col items-center gap-1"
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-sm">{mode.label}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={calculateMutation.isPending || checkUsageMutation.isPending}
+            className="w-full py-4 font-semibold flex items-center gap-2"
+          >
+            <Calculator className="h-5 w-5" />
+            {calculateMutation.isPending ? "計算中..." : "距離と時間を比較"}
+          </Button>
+        </form>
+      </div>
+
+      {calculateMutation.isPending && (
+        <div className="bg-white rounded-xl shadow-sm p-8 mb-6 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">距離と時間を計算中...</p>
+        </div>
+      )}
+
+      {showResults && results.length > 0 && (
+        <ResultsTable results={results} />
+      )}
+
+      <AdModal
+        isOpen={showAdModal}
+        onClose={() => setShowAdModal(false)}
+        onComplete={handleAdComplete}
+      />
+    </>
+  );
+}

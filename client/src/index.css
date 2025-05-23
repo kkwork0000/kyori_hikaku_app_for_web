@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 210 11% 13%; /* #212121 */
+  --muted: 0 0% 96%; /* #F5F5F5 */
+  --muted-foreground: 0 0% 46%; /* #757575 */
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 11% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 11% 13%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --primary: 207 90% 32%; /* #1976D2 */
+  --primary-foreground: 0 0% 98%;
+  --secondary: 122 39% 49%; /* #43A047 */
+  --secondary-foreground: 0 0% 98%;
+  --accent: 36 100% 50%; /* #FF9800 */
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 60 9% 98%;
+  --ring: 207 90% 32%;
+  --radius: 0.75rem;
+  
+  /* Custom colors for the app */
+  --text-primary: 210 11% 13%; /* #212121 */
+  --text-secondary: 0 0% 46%; /* #757575 */
+  --neutral: 0 0% 96%; /* #F5F5F5 */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 122 39% 49%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 36 100% 50%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 5% 84%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-noto antialiased bg-neutral text-foreground min-h-screen;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+}
+
+.font-noto {
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+/* Custom animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.slide-out-right {
+  animation: slide-out-right 0.3s ease-out;
+}
+
+/* Mobile-first responsive utilities */
+.text-text-primary {
+  color: hsl(var(--text-primary));
+}
+
+.text-text-secondary {
+  color: hsl(var(--text-secondary));
+}
+
+.bg-neutral {
+  background-color: hsl(var(--neutral));
+}
+
+.border-primary {
+  border-color: hsl(var(--primary));
+}
+
+.hover\:border-primary:hover {
+  border-color: hsl(var(--primary));
+}
+
+/* Travel mode button active state */
+.travel-mode.active {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Toast animation */
+.toast-enter {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+
+.toast-enter-active {
+  transform: translateY(0);
+  opacity: 1;
+  transition: all 0.3s ease-out;
+}
+
+.toast-exit {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-exit-active {
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: all 0.3s ease-out;
+}
