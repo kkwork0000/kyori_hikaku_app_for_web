@@ -5,7 +5,7 @@ import { insertUserUsageSchema, insertDistanceQuerySchema } from "@shared/schema
 import { z } from "zod";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -40,6 +40,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid usage data", errors: error.errors });
       }
       res.status(500).json({ message: "Error updating usage" });
+    }
+  });
+
+  // New endpoint: /get-distance for Google Distance Matrix API
+  app.post("/get-distance", async (req, res) => {
+    try {
+      const { origin, destinations, travelMode = "driving" } = req.body;
+      
+      if (!origin || !destinations || !Array.isArray(destinations) || destinations.length === 0) {
+        return res.status(400).json({ 
+          error: "origin and destinations (array) are required" 
+        });
+      }
+      
+      if (!GOOGLE_MAPS_API_KEY) {
+        return res.status(500).json({ 
+          error: "Google Maps API key not configured" 
+        });
+      }
+
+      // Construct Distance Matrix API URL
+      const baseUrl = "https://maps.googleapis.com/maps/api/distancematrix/json";
+      const params = new URLSearchParams({
+        origins: origin,
+        destinations: destinations.join('|'),
+        mode: travelMode,
+        language: 'ja',
+        key: GOOGLE_MAPS_API_KEY
+      });
+
+      const response = await fetch(`${baseUrl}?${params}`);
+      const data = await response.json();
+
+      if (data.status !== 'OK') {
+        return res.status(400).json({ 
+          error: "Google Maps API error", 
+          details: data.status 
+        });
+      }
+
+      // Format results
+      const results = data.rows[0].elements.map((element: any, index: number) => {
+        if (element.status === 'OK') {
+          return {
+            destination: destinations[index],
+            distance: element.distance.text,
+            duration: element.duration.text,
+            distanceValue: element.distance.value,
+            durationValue: element.duration.value
+          };
+        } else {
+          return {
+            destination: destinations[index],
+            distance: 'N/A',
+            duration: 'N/A',
+            error: element.status
+          };
+        }
+      });
+
+      res.json({ 
+        success: true,
+        origin: data.origin_addresses[0],
+        results 
+      });
+    } catch (error) {
+      console.error('Distance calculation error:', error);
+      res.status(500).json({ 
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

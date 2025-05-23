@@ -13,6 +13,7 @@ export default function Navigation() {
     { path: "/", label: "トップページ（距離比較）", icon: Home },
     { path: "/how-to", label: "使い方", icon: HelpCircle },
     { path: "/articles", label: "紹介記事", icon: Newspaper },
+    { path: "/test", label: "APIテスト", icon: HelpCircle },
   ];
 
   return (
