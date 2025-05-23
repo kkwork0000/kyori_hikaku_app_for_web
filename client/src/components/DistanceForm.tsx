@@ -91,6 +91,13 @@ export default function DistanceForm() {
       */
         // Proceed with calculation
         if (pendingCalculation) {
+          console.log("Sending calculation with settings:", pendingCalculation);
+          
+          // pendingCalculation内のrouteSettingsが適切にあるか確認
+          if (pendingCalculation.routeSettings) {
+            console.log("Route settings being sent:", pendingCalculation.routeSettings);
+          }
+          
           calculateMutation.mutate({
             ...pendingCalculation,
             travelMode,
