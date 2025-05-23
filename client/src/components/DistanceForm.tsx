@@ -192,9 +192,16 @@ export default function DistanceForm() {
   };
 
   const handleRouteSettingsConfirm = (routeSettings: RouteSettings) => {
+    console.log(`設定を保存: 目的地 ${currentDestinationIndex}`, routeSettings);
+    
+    // 設定を保存
     const newSettings = new Map(destinationSettings);
     newSettings.set(currentDestinationIndex, routeSettings);
     setDestinationSettings(newSettings);
+    
+    // デバッグ用：保存した設定の内容を確認
+    console.log("保存された設定:", Array.from(newSettings.entries()));
+    
     setShowRouteDetailModal(false);
   };
 

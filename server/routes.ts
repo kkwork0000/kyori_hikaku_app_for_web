@@ -304,13 +304,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format results with custom route settings if available
       const results = data.rows[0].elements.map((element: any, index: number) => {
         // 詳細設定が指定されている場合はカスタムルート情報を使用
-        const destIndex = index.toString();
-        const hasCustomSettings = routeSettings && routeSettings[index] && routeSettings[index].routeData;
+        // indexはnumber型だが、Mapから変換された場合objectのキーは文字列になる可能性がある
+        const hasCustomSettings = routeSettings && 
+          (routeSettings[index] || routeSettings[index.toString()]) && 
+          ((routeSettings[index] && routeSettings[index].routeData) || 
+           (routeSettings[index.toString()] && routeSettings[index.toString()].routeData));
         
         if (element.status === 'OK') {
           // カスタム設定があればそれを使用、なければAPIの結果を使用
           if (hasCustomSettings) {
-            const customRoute = routeSettings[index].routeData;
+            // キーが数値型と文字列型の両方に対応
+            const routeSetting = routeSettings[index] || routeSettings[index.toString()];
+            const customRoute = routeSetting.routeData;
+            
+            console.log(`Using custom route for destination ${index}: ${destinations[index]}`, {
+              distance: customRoute.distance,
+              duration: customRoute.duration,
+              summary: customRoute.summary
+            });
+            
             return {
               destination: destinations[index],
               distance: customRoute.distance,
