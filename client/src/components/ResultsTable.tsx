@@ -9,6 +9,7 @@ interface DistanceResult {
   duration: string;
   distanceValue?: number;
   durationValue?: number;
+  customRouteApplied?: boolean;
   error?: string;
 }
 
@@ -91,9 +92,15 @@ export default function ResultsTable({ results }: ResultsTableProps) {
                 </td>
                 <td className="px-4 py-4 text-sm text-text-primary">
                   {result.error ? "N/A" : result.distance}
+                  {result.customRouteApplied && 
+                    <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded">カスタム</span>
+                  }
                 </td>
                 <td className="px-4 py-4 text-sm text-text-primary">
                   {result.error ? "N/A" : result.duration}
+                  {result.customRouteApplied && 
+                    <span className="ml-1 text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded">カスタム</span>
+                  }
                 </td>
                 <td className="px-4 py-4">
                   {!result.error && (

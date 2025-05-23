@@ -249,7 +249,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calculate distances using Google Distance Matrix API
   app.post("/api/calculate-distances", async (req, res) => {
     try {
-      const { origin, destinations, travelMode, userId } = req.body;
+      const { origin, destinations, travelMode, userId, routeSettings } = req.body;
+      
+      console.log("Calculate distances with:", { 
+        origin, 
+        destinationsCount: destinations.length, 
+        travelMode, 
+        hasRouteSettings: !!routeSettings 
+      });
+      
+      if (routeSettings) {
+        console.log("Route settings provided:", JSON.stringify(routeSettings));
+      }
       
       if (!GOOGLE_MAPS_API_KEY) {
         return res.status(500).json({ message: "Google Maps API key not configured" });
@@ -272,16 +283,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Google Maps API error", error: data.status });
       }
 
-      // Format results
+      // Format results with custom route settings if available
       const results = data.rows[0].elements.map((element: any, index: number) => {
+        // 詳細設定が指定されている場合はカスタムルート情報を使用
+        const destIndex = index.toString();
+        const hasCustomSettings = routeSettings && routeSettings[index] && routeSettings[index].routeData;
+        
         if (element.status === 'OK') {
-          return {
-            destination: destinations[index],
-            distance: element.distance.text,
-            duration: element.duration.text,
-            distanceValue: element.distance.value,
-            durationValue: element.duration.value
-          };
+          // カスタム設定があればそれを使用、なければAPIの結果を使用
+          if (hasCustomSettings) {
+            const customRoute = routeSettings[index].routeData;
+            return {
+              destination: destinations[index],
+              distance: customRoute.distance,
+              duration: customRoute.duration,
+              distanceValue: customRoute.distanceValue,
+              durationValue: customRoute.durationValue,
+              customRouteApplied: true
+            };
+          } else {
+            return {
+              destination: destinations[index],
+              distance: element.distance.text,
+              duration: element.duration.text,
+              distanceValue: element.distance.value,
+              durationValue: element.duration.value
+            };
+          }
         } else {
           return {
             destination: destinations[index],

@@ -29,7 +29,11 @@ export default function DistanceForm() {
   const [results, setResults] = useState<DistanceResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showAdModal, setShowAdModal] = useState(false);
-  const [pendingCalculation, setPendingCalculation] = useState<{ origin: string; destinations: string[] } | null>(null);
+  const [pendingCalculation, setPendingCalculation] = useState<{
+    origin: string;
+    destinations: string[];
+    routeSettings?: Record<number, RouteSettings>;
+  } | null>(null);
   const [errors, setErrors] = useState<{ origin?: string; destinations?: string }>({});
   
   // 詳細設定関連のstate
@@ -43,7 +47,13 @@ export default function DistanceForm() {
   const currentMonth = getCurrentMonth();
 
   const calculateMutation = useMutation({
-    mutationFn: async (data: { origin: string; destinations: string[]; travelMode: TravelMode; userId: string }) => {
+    mutationFn: async (data: { 
+      origin: string; 
+      destinations: string[]; 
+      travelMode: TravelMode; 
+      userId: string;
+      routeSettings?: Record<number, RouteSettings>;
+    }) => {
       const response = await apiRequest("POST", "/api/calculate-distances", data);
       return response.json();
     },
@@ -140,7 +150,19 @@ export default function DistanceForm() {
     if (!validateForm()) return;
     
     const validDestinations = destinations.filter(dest => dest.trim() !== "");
-    setPendingCalculation({ origin: origin.trim(), destinations: validDestinations });
+    
+    // destinationSettingsをRecord型に変換
+    const routeSettingsMap: Record<number, RouteSettings> = {};
+    destinationSettings.forEach((value, key) => {
+      routeSettingsMap[key] = value;
+    });
+    
+    setPendingCalculation({
+      origin: origin.trim(),
+      destinations: validDestinations,
+      routeSettings: Object.keys(routeSettingsMap).length > 0 ? routeSettingsMap : undefined
+    });
+    
     checkUsageMutation.mutate();
   };
 
