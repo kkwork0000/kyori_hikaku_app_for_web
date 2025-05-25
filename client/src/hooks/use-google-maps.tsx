@@ -11,6 +11,7 @@ declare global {
 
 interface GoogleMapsHookProps {
   apiKey: string | undefined;
+  libraries?: string[];
 }
 
 interface UseGoogleMapsReturn {
@@ -18,7 +19,7 @@ interface UseGoogleMapsReturn {
   loadError: Error | null;
 }
 
-export function useGoogleMaps({ apiKey }: GoogleMapsHookProps): UseGoogleMapsReturn {
+export function useGoogleMaps({ apiKey, libraries = ['places'] }: GoogleMapsHookProps): UseGoogleMapsReturn {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
   const scriptLoadedRef = useRef(false);
@@ -48,7 +49,7 @@ export function useGoogleMaps({ apiKey }: GoogleMapsHookProps): UseGoogleMapsRet
     // スクリプトをロード
     const script = document.createElement('script');
     script.type = 'text/javascript';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraries.join(',')}&callback=initMap`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {

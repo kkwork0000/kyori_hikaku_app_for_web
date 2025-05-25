@@ -1,0 +1,231 @@
+import { useState, useRef, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Clock } from "lucide-react";
+
+interface PlaceResult {
+  name: string;
+  address: string;
+  placeId: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface PlaceAutocompleteProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string, placeData?: PlaceResult) => void;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
+}
+
+export default function PlaceAutocomplete({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  error
+}: PlaceAutocompleteProps) {
+  const [suggestions, setSuggestions] = useState<PlaceResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Google Places Autocomplete Service
+  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
+  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+
+  useEffect(() => {
+    // Google Maps APIが読み込まれているかチェック
+    if (window.google && window.google.maps && window.google.maps.places) {
+      autocompleteService.current = new window.google.maps.places.AutocompleteService();
+      
+      // PlacesServiceの初期化には地図要素が必要
+      const mapDiv = document.createElement('div');
+      const map = new window.google.maps.Map(mapDiv);
+      placesService.current = new window.google.maps.places.PlacesService(map);
+    }
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    onChange(inputValue);
+
+    // 入力が空の場合は候補を非表示
+    if (!inputValue.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    // 前回のタイマーをクリア
+    if (suggestionTimeoutRef.current) {
+      clearTimeout(suggestionTimeoutRef.current);
+    }
+
+    // 少し遅延させてAPI呼び出しを制限
+    suggestionTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(inputValue);
+    }, 300);
+  };
+
+  const fetchSuggestions = async (input: string) => {
+    if (!autocompleteService.current || input.length < 2) return;
+
+    setIsLoading(true);
+
+    try {
+      const request = {
+        input,
+        language: 'ja',
+        componentRestrictions: { country: 'jp' }, // 日本に限定
+        types: ['establishment', 'geocode'] // 施設と地理的場所
+      };
+
+      autocompleteService.current.getPlacePredictions(
+        request,
+        (predictions, status) => {
+          setIsLoading(false);
+          
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            const results: PlaceResult[] = predictions.slice(0, 5).map(prediction => ({
+              name: prediction.structured_formatting.main_text,
+              address: prediction.structured_formatting.secondary_text || prediction.description,
+              placeId: prediction.place_id
+            }));
+            
+            setSuggestions(results);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setIsLoading(false);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = async (suggestion: PlaceResult) => {
+    if (!placesService.current) return;
+
+    // 詳細情報を取得
+    try {
+      const request = {
+        placeId: suggestion.placeId,
+        fields: ['name', 'formatted_address', 'geometry']
+      };
+
+      placesService.current.getDetails(request, (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          const placeData: PlaceResult = {
+            name: place.name || suggestion.name,
+            address: place.formatted_address || suggestion.address,
+            placeId: suggestion.placeId,
+            location: place.geometry?.location ? {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            } : undefined
+          };
+
+          // フォームの値を更新
+          onChange(place.formatted_address || suggestion.address, placeData);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+      // エラーの場合は基本情報だけで更新
+      onChange(suggestion.address, suggestion);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // 少し遅延させて候補リストを非表示（クリック処理のため）
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
+  const handleInputFocus = () => {
+    if (suggestions.length > 0 && value.trim()) {
+      setShowSuggestions(true);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Label htmlFor={id} className="text-sm font-medium text-text-secondary">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Input
+        ref={inputRef}
+        id={id}
+        value={value}
+        onChange={handleInputChange}
+        onBlur={handleInputBlur}
+        onFocus={handleInputFocus}
+        placeholder={placeholder}
+        className={`mt-1 ${error ? 'border-red-500' : ''}`}
+      />
+      
+      {error && (
+        <p className="text-red-500 text-xs mt-1">{error}</p>
+      )}
+
+      {/* 候補リスト */}
+      {showSuggestions && suggestions.length > 0 && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto shadow-lg border">
+          <CardContent className="p-0">
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={suggestion.placeId}
+                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-text-primary truncate">
+                      {suggestion.name}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate mt-0.5">
+                      {suggestion.address}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ローディング表示 */}
+      {isLoading && showSuggestions && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Clock className="h-4 w-4 animate-spin" />
+              候補を検索中...
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

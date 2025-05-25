@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Plus, Trash2, Calculator, Car, MapPinIcon as Walking, Bike, Train, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useGoogleMaps } from "@/hooks/use-google-maps";
 import ResultsTable from "./ResultsTable";
 import AdModal from "./AdModal";
 import RouteDetailModal, { type RouteSettings } from "./RouteDetailModal";
+import PlaceAutocomplete from "./PlaceAutocomplete";
 import { getUserId, getCurrentMonth, updateUserUsage } from "@/lib/userTracking";
 
 type TravelMode = "driving" | "walking" | "transit" | "bicycling";
@@ -45,6 +47,21 @@ export default function DistanceForm() {
   const queryClient = useQueryClient();
   const userId = getUserId();
   const currentMonth = getCurrentMonth();
+
+  // Google Maps API設定を取得
+  const { data: googleMapsConfig } = useQuery({
+    queryKey: ['/api/google-maps-config'],
+    queryFn: async () => {
+      const response = await fetch('/api/google-maps-config');
+      return response.json();
+    },
+  });
+
+  // Google Maps APIの読み込み
+  const { isLoaded: googleMapsLoaded } = useGoogleMaps({
+    apiKey: googleMapsConfig?.apiKey,
+    libraries: ['places']
+  });
 
   const calculateMutation = useMutation({
     mutationFn: async (data: { 

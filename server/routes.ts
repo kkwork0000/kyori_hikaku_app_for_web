@@ -43,6 +43,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Maps API key endpoint (for frontend use)
+  app.get("/api/google-maps-config", (req, res) => {
+    res.json({
+      apiKey: GOOGLE_MAPS_API_KEY || null,
+      libraries: ['places', 'geometry']
+    });
+  });
+
   // New endpoint: /get-distance for Google Distance Matrix API
   app.post("/get-distance", async (req, res) => {
     try {
