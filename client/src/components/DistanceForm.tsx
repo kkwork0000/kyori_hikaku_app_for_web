@@ -244,18 +244,38 @@ export default function DistanceForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Origin Input */}
           <div>
-            <Label htmlFor="origin" className="text-sm font-medium text-text-secondary">
-              出発地 <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="origin"
-              value={origin}
-              onChange={(e) => setOrigin(e.target.value)}
-              placeholder="例: 東京駅"
-              className="mt-2"
-            />
-            {errors.origin && (
-              <p className="text-red-500 text-sm mt-1">{errors.origin}</p>
+            {googleMapsLoaded ? (
+              <PlaceAutocomplete
+                id="origin"
+                label="出発地"
+                value={origin}
+                onChange={(value, placeData) => {
+                  setOrigin(value);
+                  // 必要に応じて緯度経度情報も保存
+                  if (placeData?.location) {
+                    console.log('Origin selected:', placeData);
+                  }
+                }}
+                placeholder="東京ディズニーランド、早稲田大学など"
+                required
+                error={errors.origin}
+              />
+            ) : (
+              <>
+                <Label htmlFor="origin" className="text-sm font-medium text-text-secondary">
+                  出発地 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="origin"
+                  value={origin}
+                  onChange={(e) => setOrigin(e.target.value)}
+                  placeholder="例: 東京駅"
+                  className="mt-2"
+                />
+                {errors.origin && (
+                  <p className="text-red-500 text-sm mt-1">{errors.origin}</p>
+                )}
+              </>
             )}
           </div>
 
@@ -270,12 +290,30 @@ export default function DistanceForm() {
               {destinations.map((destination, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Input
-                      value={destination}
-                      onChange={(e) => updateDestination(index, e.target.value)}
-                      placeholder={`例: ${index === 0 ? '新宿駅' : '渋谷駅'}`}
-                      className="flex-1"
-                    />
+                    {googleMapsLoaded ? (
+                      <PlaceAutocomplete
+                        id={`destination-${index}`}
+                        label=""
+                        value={destination}
+                        onChange={(value, placeData) => {
+                          updateDestination(index, value);
+                          // 必要に応じて緯度経度情報も保存
+                          if (placeData?.location) {
+                            console.log(`Destination ${index} selected:`, placeData);
+                          }
+                        }}
+                        placeholder={`${index === 0 ? '新宿駅、東京スカイツリーなど' : '渋谷駅、六本木ヒルズなど'}`}
+                      />
+                    ) : (
+                      <div className="flex-1">
+                        <Input
+                          value={destination}
+                          onChange={(e) => updateDestination(index, e.target.value)}
+                          placeholder={`例: ${index === 0 ? '新宿駅' : '渋谷駅'}`}
+                          className="w-full"
+                        />
+                      </div>
+                    )}
                     {destination.trim() && origin.trim() && (
                       <Button
                         type="button"

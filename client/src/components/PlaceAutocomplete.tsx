@@ -169,10 +169,12 @@ export default function PlaceAutocomplete({
   };
 
   return (
-    <div className="relative">
-      <Label htmlFor={id} className="text-sm font-medium text-text-secondary">
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
+    <div className="relative flex-1">
+      {label && (
+        <Label htmlFor={id} className="text-sm font-medium text-text-secondary">
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+      )}
       <Input
         ref={inputRef}
         id={id}
@@ -181,7 +183,7 @@ export default function PlaceAutocomplete({
         onBlur={handleInputBlur}
         onFocus={handleInputFocus}
         placeholder={placeholder}
-        className={`mt-1 ${error ? 'border-red-500' : ''}`}
+        className={`${label ? 'mt-1' : ''} ${error ? 'border-red-500' : ''}`}
       />
       
       {error && (
@@ -190,21 +192,29 @@ export default function PlaceAutocomplete({
 
       {/* 候補リスト */}
       {showSuggestions && suggestions.length > 0 && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto shadow-lg border">
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto shadow-lg border bg-white">
           <CardContent className="p-0">
             {suggestions.map((suggestion, index) => (
               <div
                 key={suggestion.placeId}
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors"
+                className="px-3 py-3 sm:px-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors touch-manipulation"
                 onClick={() => handleSuggestionClick(suggestion)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSuggestionClick(suggestion);
+                  }
+                }}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2 sm:gap-3">
                   <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-text-primary truncate">
+                    <div className="font-medium text-sm text-text-primary line-clamp-1">
                       {suggestion.name}
                     </div>
-                    <div className="text-xs text-gray-500 truncate mt-0.5">
+                    <div className="text-xs text-gray-500 line-clamp-2 mt-0.5 leading-relaxed">
                       {suggestion.address}
                     </div>
                   </div>
