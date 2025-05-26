@@ -8,17 +8,17 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
   // Get user usage for current month
   app.get("/api/usage/:userId/:month", async (req, res) => {
     try {
       const { userId, month } = req.params;
       const usage = await storage.getUserUsage(userId, month);
-      
+
       if (!usage) {
         return res.json({ usageCount: 0 });
       }
-      
+
       res.json({ usageCount: usage.usageCount });
     } catch (error) {
       res.status(500).json({ message: "Error fetching usage data" });
@@ -55,13 +55,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/get-distance", async (req, res) => {
     try {
       const { origin, destinations, travelMode = "driving" } = req.body;
-      
+
       if (!origin || !destinations || !Array.isArray(destinations) || destinations.length === 0) {
         return res.status(400).json({ 
           error: "origin and destinations (array) are required" 
         });
       }
-      
+
       if (!GOOGLE_MAPS_API_KEY) {
         return res.status(500).json({ 
           error: "Google Maps API key not configured" 
@@ -126,13 +126,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/get-routes", async (req, res) => {
     try {
       const { origin, destination, travelMode = "driving", avoidTolls = false, originPlaceId, destinationPlaceId } = req.body;
-      
+
       if (!origin || !destination) {
         return res.status(400).json({ 
           error: "origin and destination are required" 
         });
       }
-      
+
       if (!GOOGLE_MAPS_API_KEY) {
         return res.status(500).json({ 
           error: "Google Maps API key not configured" 
@@ -143,13 +143,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Construct Directions API URL
       const baseUrl = "https://maps.googleapis.com/maps/api/directions/json";
-      
+
       // Place IDが利用可能な場合はPlace IDを優先使用
       const originParam = originPlaceId ? `place_id:${originPlaceId}` : origin;
       const destinationParam = destinationPlaceId ? `place_id:${destinationPlaceId}` : destination;
-      
+
       console.log(`Using origin: ${originParam}, destination: ${destinationParam}`);
-      
+
       const params = new URLSearchParams({
         origin: originParam,
         destination: destinationParam,
@@ -166,60 +166,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add transit-specific parameters
       if (travelMode === 'transit') {
-        // 現在時刻から5分後の時刻を出発時刻として設定
-        const departureTime = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
+        // 現在時刻から30分後の時刻を出発時刻として設定
+        const departureTime = Math.floor((Date.now() + 30 * 60 * 1000) / 1000);
         params.append('departure_time', departureTime.toString());
-        
+
         // 公共交通手段を指定（電車、バス、地下鉄など）
-        params.append('transit_mode', 'subway|rail|bus');
-        
+        params.append('transit_mode', 'subway|rail|bus|tram');
+
         // 乗り換え選択を最適化
         params.append('transit_routing_preference', 'fewer_transfers');
-        
-        console.log(`Transit parameters: departure_time=${departureTime}, modes=subway|rail|bus`);
+
+        // 地域設定を追加（日本向け）
+        params.append('region', 'jp');
+
+        console.log(`Transit parameters: departure_time=${departureTime}, modes=subway|rail|bus|tram`);
       }
 
       const apiUrl = `${baseUrl}?${params}`;
       console.log(`Calling Directions API: ${apiUrl.replace(GOOGLE_MAPS_API_KEY, 'API_KEY_HIDDEN')}`);
-      
+
       const response = await fetch(apiUrl);
       const data = await response.json();
       console.log("Directions API response status:", data.status);
-      
+
       if (data.status !== 'OK') {
         console.error("Directions API error:", data);
-        
+
         // 公共交通でZERO_RESULTSが返された場合の特別な処理
         if (travelMode === 'transit' && data.status === 'ZERO_RESULTS') {
           console.log("Transit mode failed, trying alternative approaches...");
-          
+
           // 複数の代替アプローチを試行
           const alternativeApproaches = [
-            // アプローチ1: 1時間後の出発時刻で再試行
+            // アプローチ1: 30分後の出発時刻で再試行
+            {
+              departure_time: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
+              transit_mode: 'subway|rail|bus|tram',
+              description: '30分後、全交通手段'
+            },
+            // アプローチ2: 1時間後の出発時刻で試行
             {
               departure_time: Math.floor((Date.now() + 60 * 60 * 1000) / 1000),
               transit_mode: 'subway|rail',
               description: '1時間後、地下鉄・電車のみ'
             },
-            // アプローチ2: 明日の朝9時で試行
+            // アプローチ3: 明日の朝9時で試行
             {
               departure_time: Math.floor((new Date().setHours(33, 0, 0, 0)) / 1000), // 明日9時
-              transit_mode: 'subway|rail|bus',
+              transit_mode: 'subway|rail|bus|tram',
               description: '明日朝9時、全交通手段'
             },
-            // アプローチ3: 簡略化された地点名で試行
+            // アプローチ4: 駅名を簡略化して試行
             {
               departure_time: Math.floor((Date.now() + 30 * 60 * 1000) / 1000),
-              transit_mode: 'subway|rail',
-              origin: origin.split(' ')[0], // 最初の単語のみ使用
-              destination: destination.split(' ')[0],
-              description: '30分後、簡略化された地点名'
+              transit_mode: 'subway|rail|bus|tram',
+              origin: origin.replace('駅', ''),
+              destination: destination.replace('駅', ''),
+              description: '30分後、駅名を簡略化'
             }
           ];
-          
+
           for (const approach of alternativeApproaches) {
             console.log(`Trying alternative approach: ${approach.description}`);
-            
+
             const altParams = new URLSearchParams({
               origin: approach.origin || origin,
               destination: approach.destination || destination,
@@ -230,11 +239,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               transit_mode: approach.transit_mode,
               key: GOOGLE_MAPS_API_KEY
             });
-            
+
             try {
               const altResponse = await fetch(`${baseUrl}?${altParams}`);
               const altData = await altResponse.json();
-              
+
               if (altData.status === 'OK' && altData.routes && altData.routes.length > 0) {
                 console.log(`Alternative transit route found with approach: ${approach.description}`);
                 data.routes = altData.routes;
@@ -245,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error(`Alternative approach failed: ${approach.description}`, altError);
             }
           }
-          
+
           // すべてのアプローチが失敗した場合
           if (data.status === 'ZERO_RESULTS') {
             return res.status(400).json({
@@ -256,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         }
-        
+
         // その他のエラーの場合
         if (data.status !== 'OK') {
           return res.status(400).json({ 
@@ -291,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             warnings: ["ルート詳細が取得できませんでした"],
           };
         }
-        
+
         return {
           routeIndex: index,
           summary: route.summary || `ルート ${index + 1}`,
@@ -306,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`Returning ${routes.length} routes`);
-      
+
       res.json({ 
         success: true,
         origin: data.routes[0].legs[0]?.start_address || origin,
@@ -315,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Route calculation error:', error);
-      
+
       // デモデータを返して、フロントエンドの動作を確保
       const demoRoutes = [
         {
@@ -339,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           warnings: ["注意: これはデモデータです", "高速道路を含むルート"]
         }
       ];
-      
+
       res.json({
         success: true,
         origin: origin,
@@ -353,17 +362,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/calculate-distances", async (req, res) => {
     try {
       const { origin, destinations, travelMode, userId, routeSettings } = req.body;
-      
+
       console.log("Calculate distances with:", { 
         origin, 
         destinationsCount: destinations.length, 
         travelMode, 
         hasRouteSettings: !!routeSettings 
       });
-      
+
       if (routeSettings) {
         console.log("Route settings provided:", JSON.stringify(routeSettings));
-        
+
         // 詳細設定情報の構造をデバッグするためにログ出力
         for (const key in routeSettings) {
           const setting = routeSettings[key];
@@ -372,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             selectedRouteIndex: setting.selectedRouteIndex,
             avoidTolls: setting.avoidTolls
           });
-          
+
           if (setting.routeData) {
             console.log(`Route data for destination ${key}:`, {
               distance: setting.routeData.distance,
@@ -382,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       if (!GOOGLE_MAPS_API_KEY) {
         return res.status(500).json({ message: "Google Maps API key not configured" });
       }
@@ -412,20 +421,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (routeSettings[index] || routeSettings[index.toString()]) && 
           ((routeSettings[index] && routeSettings[index].routeData) || 
            (routeSettings[index.toString()] && routeSettings[index.toString()].routeData));
-        
+
         if (element.status === 'OK') {
           // カスタム設定があればそれを使用、なければAPIの結果を使用
           if (hasCustomSettings) {
             // キーが数値型と文字列型の両方に対応
             const routeSetting = routeSettings[index] || routeSettings[index.toString()];
             const customRoute = routeSetting.routeData;
-            
+
             console.log(`Using custom route for destination ${index}: ${destinations[index]}`, {
               distance: customRoute.distance,
               duration: customRoute.duration,
               summary: customRoute.summary
             });
-            
+
             return {
               destination: destinations[index],
               distance: customRoute.distance,
@@ -475,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/login", async (req, res) => {
     try {
       const { password } = req.body;
-      
+
       if (password === ADMIN_PASSWORD) {
         res.json({ success: true });
       } else {
@@ -490,11 +499,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/stats", async (req, res) => {
     try {
       const currentMonth = `${new Date().getMonth() + 1}_${new Date().getFullYear()}`;
-      
+
       const totalUsers = await storage.getTotalUsersCount();
       const monthlyQueries = await storage.getMonthlyQueriesCount(currentMonth);
       const allUsage = await storage.getAllUserUsage();
-      
+
       // Filter for current month and format for display
       const currentMonthUsage = allUsage
         .filter(usage => usage.month === currentMonth)
