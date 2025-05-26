@@ -27,6 +27,8 @@ interface RouteDetailModalProps {
   origin: string;
   destination: string;
   travelMode: "driving" | "walking" | "transit" | "bicycling";
+  originPlaceId?: string;
+  destinationPlaceId?: string;
 }
 
 export interface RouteSettings {
@@ -41,7 +43,9 @@ export default function RouteDetailModal({
   onConfirm,
   origin,
   destination,
-  travelMode
+  travelMode,
+  originPlaceId,
+  destinationPlaceId
 }: RouteDetailModalProps) {
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
@@ -100,6 +104,8 @@ export default function RouteDetailModal({
           destination,
           travelMode,
           avoidTolls: travelMode === "driving" ? avoidTolls : false,
+          originPlaceId,
+          destinationPlaceId
         }),
       });
 
