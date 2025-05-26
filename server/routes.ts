@@ -166,12 +166,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add transit-specific parameters
       if (travelMode === 'transit') {
-        // 現在時刻から30分後の時刻を出発時刻として設定
-        const departureTime = Math.floor((Date.now() + 30 * 60 * 1000) / 1000);
-        params.append('departure_time', departureTime.toString());
+        // 現在時刻を使用（nowパラメータ）
+        params.append('departure_time', 'now');
 
         // 公共交通手段を指定（電車、バス、地下鉄など）
-        params.append('transit_mode', 'subway|rail|bus|tram');
+        params.append('transit_mode', 'subway|rail|bus');
 
         // 乗り換え選択を最適化
         params.append('transit_routing_preference', 'fewer_transfers');
@@ -179,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 地域設定を追加（日本向け）
         params.append('region', 'jp');
 
-        console.log(`Transit parameters: departure_time=${departureTime}, modes=subway|rail|bus|tram`);
+        console.log(`Transit parameters: departure_time=now, modes=subway|rail|bus, region=jp`);
       }
 
       const apiUrl = `${baseUrl}?${params}`;
@@ -188,6 +187,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await fetch(apiUrl);
       const data = await response.json();
       console.log("Directions API response status:", data.status);
+      console.log(`Routes found: ${data.routes ? data.routes.length : 0}`);
+      
+      // 詳細な公共交通デバッグ情報
+      if (travelMode === 'transit') {
+        console.log('=== TRANSIT DEBUG INFO ===');
+        console.log('Available travel modes:', data.available_travel_modes);
+        console.log('Geocoded waypoints:', data.geocoded_waypoints?.length || 0);
+        if (data.routes && data.routes.length > 0) {
+          console.log('First route overview:', {
+            legs: data.routes[0].legs?.length || 0,
+            distance: data.routes[0].legs?.[0]?.distance?.text,
+            duration: data.routes[0].legs?.[0]?.duration?.text
+          });
+        }
+        console.log('=== END TRANSIT DEBUG ===');
+      }
 
       if (data.status !== 'OK') {
         console.error("Directions API error:", data);
