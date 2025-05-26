@@ -424,47 +424,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Google Maps API key not configured" });
       }
 
-      // 公共交通の場合は住所を簡略化
-      let processedOrigin = origin;
-      let processedDestinations = destinations;
-      
+      // 公共交通の場合はDirections APIを使用
       if (travelMode === 'transit') {
-        // 住所を簡略化（「東京駅」「新宿駅」形式にする）
-        processedOrigin = origin.split('、')[0].split(' ')[0];
-        processedDestinations = destinations.map(dest => dest.split('、')[0].split(' ')[0]);
+        console.log('Transit mode detected: using Directions API instead of Distance Matrix API');
+        
+        // 住所を簡略化
+        const processedOrigin = origin.split('、')[0].split(' ')[0];
+        const processedDestination = destinations[0].split('、')[0].split(' ')[0];
         
         console.log('Transit mode: simplified addresses', {
           originalOrigin: origin,
           processedOrigin,
-          originalDestinations: destinations,
-          processedDestinations
+          originalDestination: destinations[0],
+          processedDestination
         });
+
+        // Directions APIを使用
+        const directionsUrl = "https://maps.googleapis.com/maps/api/directions/json";
+        const directionsParams = new URLSearchParams({
+          origin: processedOrigin,
+          destination: processedDestination,
+          mode: 'transit',
+          language: 'ja',
+          key: GOOGLE_MAPS_API_KEY
+        });
+
+        // 出発時刻を設定（現在時刻+5分後）
+        const departureTime = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
+        directionsParams.append('departure_time', departureTime.toString());
+        directionsParams.append('transit_mode', 'subway|rail');
+        directionsParams.append('region', 'jp');
+
+        console.log(`Transit Directions API params: departure_time=${departureTime} (5 minutes from now)`);
+        
+        const directionsResponse = await fetch(`${directionsUrl}?${directionsParams}`);
+        const directionsData = await directionsResponse.json();
+
+        console.log('Directions API response status:', directionsData.status);
+        
+        if (directionsData.status === 'OK' && directionsData.routes && directionsData.routes.length > 0) {
+          const route = directionsData.routes[0];
+          const leg = route.legs[0];
+          
+          const results = [{
+            destination: destinations[0],
+            distance: leg.distance.text,
+            duration: leg.duration.text,
+            distanceValue: leg.distance.value,
+            durationValue: leg.duration.value
+          }];
+
+          return res.json({ success: true, origin: leg.start_address, results });
+        } else {
+          // 公共交通が失敗した場合、英語で再試行
+          console.log('Transit failed with Japanese, trying English addresses');
+          
+          const englishOrigin = processedOrigin === '東京駅' ? 'Tokyo Station' : 
+                               processedOrigin === '新宿駅' ? 'Shinjuku Station' :
+                               processedOrigin;
+          const englishDestination = processedDestination === '新宿駅' ? 'Shinjuku Station' :
+                                    processedDestination === '東京駅' ? 'Tokyo Station' :
+                                    processedDestination;
+
+          const englishParams = new URLSearchParams({
+            origin: englishOrigin,
+            destination: englishDestination,
+            mode: 'transit',
+            language: 'ja',
+            key: GOOGLE_MAPS_API_KEY
+          });
+          englishParams.append('departure_time', departureTime.toString());
+          englishParams.append('transit_mode', 'subway|rail');
+          englishParams.append('region', 'jp');
+
+          console.log(`Trying English addresses: ${englishOrigin} -> ${englishDestination}`);
+          
+          const englishResponse = await fetch(`${directionsUrl}?${englishParams}`);
+          const englishData = await englishResponse.json();
+
+          if (englishData.status === 'OK' && englishData.routes && englishData.routes.length > 0) {
+            const route = englishData.routes[0];
+            const leg = route.legs[0];
+            
+            const results = [{
+              destination: destinations[0],
+              distance: leg.distance.text,
+              duration: leg.duration.text,
+              distanceValue: leg.distance.value,
+              durationValue: leg.duration.value
+            }];
+
+            return res.json({ success: true, origin: leg.start_address, results });
+          } else {
+            const results = [{
+              destination: destinations[0],
+              distance: "N/A",
+              duration: "N/A",
+              error: "ZERO_RESULTS"
+            }];
+            return res.json({ success: true, origin: origin, results });
+          }
+        }
       }
 
-      // Construct Distance Matrix API URL
+      // 公共交通以外の場合はDistance Matrix APIを使用
       const baseUrl = "https://maps.googleapis.com/maps/api/distancematrix/json";
       const params = new URLSearchParams({
-        origins: processedOrigin,
-        destinations: processedDestinations.join('|'),
+        origins: origin,
+        destinations: destinations.join('|'),
         mode: travelMode,
         language: 'ja',
         key: GOOGLE_MAPS_API_KEY
       });
-
-      // 公共交通の場合の追加パラメータ
-      if (travelMode === 'transit') {
-        // 明日朝8時の確実な時間を設定
-        const tomorrow8am = new Date();
-        tomorrow8am.setDate(tomorrow8am.getDate() + 1);
-        tomorrow8am.setHours(8, 0, 0, 0);
-        const departureTime = Math.floor(tomorrow8am.getTime() / 1000);
-        params.append('departure_time', departureTime.toString());
-        
-        // 地下鉄のみに制限
-        params.append('transit_mode', 'subway');
-        
-        console.log(`Distance Matrix transit params: departure_time=${departureTime} (tomorrow 8am), mode=subway`);
-      }
 
       const response = await fetch(`${baseUrl}?${params}`);
       const data = await response.json();
