@@ -144,9 +144,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Construct Directions API URL
       const baseUrl = "https://maps.googleapis.com/maps/api/directions/json";
 
-      // Place IDが利用可能な場合はPlace IDを優先使用
-      const originParam = originPlaceId ? `place_id:${originPlaceId}` : origin;
-      const destinationParam = destinationPlaceId ? `place_id:${destinationPlaceId}` : destination;
+      // Place IDが利用可能な場合はPlace IDを優先使用、そうでなければ簡略化した住所
+      let originParam, destinationParam;
+      
+      if (travelMode === 'transit') {
+        // 公共交通の場合は住所を簡略化
+        originParam = originPlaceId ? `place_id:${originPlaceId}` : origin.split('、')[0].split(' ')[0];
+        destinationParam = destinationPlaceId ? `place_id:${destinationPlaceId}` : destination.split('、')[0].split(' ')[0];
+      } else {
+        // その他の場合は元の形式
+        originParam = originPlaceId ? `place_id:${originPlaceId}` : origin;
+        destinationParam = destinationPlaceId ? `place_id:${destinationPlaceId}` : destination;
+      }
 
       console.log(`Using origin: ${originParam}, destination: ${destinationParam}`);
 
@@ -166,11 +175,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add transit-specific parameters
       if (travelMode === 'transit') {
-        // 現在時刻を使用（nowパラメータ）
-        params.append('departure_time', 'now');
+        // 明日朝8時の確実な時間を設定
+        const tomorrow8am = new Date();
+        tomorrow8am.setDate(tomorrow8am.getDate() + 1);
+        tomorrow8am.setHours(8, 0, 0, 0);
+        const departureTime = Math.floor(tomorrow8am.getTime() / 1000);
+        params.append('departure_time', departureTime.toString());
 
-        // 公共交通手段を指定（電車、バス、地下鉄など）
-        params.append('transit_mode', 'subway|rail|bus');
+        // 地下鉄のみに制限して確実性を向上
+        params.append('transit_mode', 'subway');
 
         // 乗り換え選択を最適化
         params.append('transit_routing_preference', 'fewer_transfers');
@@ -178,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 地域設定を追加（日本向け）
         params.append('region', 'jp');
 
-        console.log(`Transit parameters: departure_time=now, modes=subway|rail|bus, region=jp`);
+        console.log(`Transit parameters: departure_time=${departureTime} (tomorrow 8am), mode=subway, region=jp`);
       }
 
       const apiUrl = `${baseUrl}?${params}`;
