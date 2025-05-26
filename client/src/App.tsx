@@ -25,23 +25,28 @@ function Router() {
 }
 
 function App() {
+  // 開発中は広告を非表示にする（公開時はtrueに変更）
+  const SHOW_ADS = false;
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen bg-neutral">
           <Navigation />
-          <main className="max-w-md mx-auto p-4 pb-20">
+          <main className={`max-w-md mx-auto p-4 ${SHOW_ADS ? 'pb-20' : 'pb-4'}`}>
             <Router />
           </main>
           
-          {/* Advertisement Banner */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-center text-white">
-              <div className="text-xs text-blue-100 mb-1">広告</div>
-              <div className="font-semibold mb-1">新しいサービスをお試しください</div>
-              <div className="text-xs text-blue-100">今すぐクリックして詳細を確認</div>
+          {/* Advertisement Banner - 開発中は非表示 */}
+          {SHOW_ADS && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-center text-white">
+                <div className="text-xs text-blue-100 mb-1">広告</div>
+                <div className="font-semibold mb-1">新しいサービスをお試しください</div>
+                <div className="text-xs text-blue-100">今すぐクリックして詳細を確認</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <Toaster />
       </TooltipProvider>
