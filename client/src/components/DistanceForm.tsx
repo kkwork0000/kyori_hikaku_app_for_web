@@ -230,11 +230,12 @@ export default function DistanceForm() {
     return destinationSettings.has(index);
   };
 
+  // 公共交通機能は将来の機能追加に備えて一時的に非表示
   const travelModes = [
     { mode: "driving" as TravelMode, label: "車", icon: Car },
     { mode: "walking" as TravelMode, label: "徒歩", icon: Walking },
-    { mode: "transit" as TravelMode, label: "公共交通", icon: Train },
     { mode: "bicycling" as TravelMode, label: "自転車", icon: Bike },
+    // { mode: "transit" as TravelMode, label: "公共交通", icon: Train }, // 将来の機能追加用
   ];
 
   return (
@@ -373,7 +374,7 @@ export default function DistanceForm() {
           {/* Travel Mode Selection */}
           <div>
             <Label className="text-sm font-medium text-text-secondary">移動手段</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-3 gap-2 mt-2">
               {travelModes.map((mode) => {
                 const Icon = mode.icon;
                 return (

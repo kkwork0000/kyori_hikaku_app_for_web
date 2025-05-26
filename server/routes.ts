@@ -424,6 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Google Maps API key not configured" });
       }
 
+      /* 公共交通機能：将来の機能追加用に保存
       // 公共交通の場合はDirections APIを使用
       if (travelMode === 'transit') {
         console.log('Transit mode detected: using Directions API instead of Distance Matrix API');
@@ -511,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               distance: leg.distance.text,
               duration: leg.duration.text,
               distanceValue: leg.distance.value,
-              durationValue: leg.duration.value
+              durationValue: le g.duration.value
             }];
 
             return res.json({ success: true, origin: leg.start_address, results });
@@ -526,6 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
+      */
 
       // 公共交通以外の場合はDistance Matrix APIを使用
       const baseUrl = "https://maps.googleapis.com/maps/api/distancematrix/json";
