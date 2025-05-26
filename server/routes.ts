@@ -424,20 +424,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Google Maps API key not configured" });
       }
 
+      // 公共交通の場合は住所を簡略化
+      let processedOrigin = origin;
+      let processedDestinations = destinations;
+      
+      if (travelMode === 'transit') {
+        // 住所を簡略化（「東京駅」「新宿駅」形式にする）
+        processedOrigin = origin.split('、')[0].split(' ')[0];
+        processedDestinations = destinations.map(dest => dest.split('、')[0].split(' ')[0]);
+        
+        console.log('Transit mode: simplified addresses', {
+          originalOrigin: origin,
+          processedOrigin,
+          originalDestinations: destinations,
+          processedDestinations
+        });
+      }
+
       // Construct Distance Matrix API URL
       const baseUrl = "https://maps.googleapis.com/maps/api/distancematrix/json";
       const params = new URLSearchParams({
-        origins: origin,
-        destinations: destinations.join('|'),
+        origins: processedOrigin,
+        destinations: processedDestinations.join('|'),
         mode: travelMode,
         language: 'ja',
         key: GOOGLE_MAPS_API_KEY
       });
 
+      // 公共交通の場合の追加パラメータ
+      if (travelMode === 'transit') {
+        // 明日朝8時の確実な時間を設定
+        const tomorrow8am = new Date();
+        tomorrow8am.setDate(tomorrow8am.getDate() + 1);
+        tomorrow8am.setHours(8, 0, 0, 0);
+        const departureTime = Math.floor(tomorrow8am.getTime() / 1000);
+        params.append('departure_time', departureTime.toString());
+        
+        // 地下鉄のみに制限
+        params.append('transit_mode', 'subway');
+        
+        console.log(`Distance Matrix transit params: departure_time=${departureTime} (tomorrow 8am), mode=subway`);
+      }
+
       const response = await fetch(`${baseUrl}?${params}`);
       const data = await response.json();
 
       if (data.status !== 'OK') {
+        // 公共交通の場合はより詳細なエラーメッセージを提供
+        if (travelMode === 'transit') {
+          return res.status(400).json({ 
+            message: "公共交通のルートが見つかりません", 
+            error: data.status,
+            suggestion: "駅名を簡略化して再検索するか、他の交通手段をお試しください",
+            availableModes: data.available_travel_modes || ['driving', 'walking', 'bicycling']
+          });
+        }
         return res.status(400).json({ message: "Google Maps API error", error: data.status });
       }
 
