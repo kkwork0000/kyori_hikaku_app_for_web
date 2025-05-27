@@ -78,6 +78,7 @@ export default function GoogleMapView({
   return (
     <div 
       ref={mapRef} 
+      data-testid="google-map"
       className="rounded-lg overflow-hidden h-[300px] w-full shadow-sm bg-gray-100"
       style={{ 
         minHeight: '300px',

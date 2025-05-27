@@ -252,6 +252,25 @@ export default function RouteDetailModal({
                     </>
                   )}
                 </div>
+                <div className="mt-3">
+                  <Button 
+                    onClick={() => {
+                      // 地図の強制表示テスト
+                      console.log('テスト: 地図表示ボタンクリック');
+                      const mapElement = document.querySelector('[data-testid="google-map"]');
+                      if (mapElement) {
+                        console.log('テスト: 地図要素が見つかりました', mapElement);
+                      } else {
+                        console.log('テスト: 地図要素が見つかりません');
+                      }
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="bg-yellow-100 border-yellow-300 text-yellow-800 hover:bg-yellow-200"
+                  >
+                    🗺️ 地図表示テスト
+                  </Button>
+                </div>
               </div>
             )}
 
