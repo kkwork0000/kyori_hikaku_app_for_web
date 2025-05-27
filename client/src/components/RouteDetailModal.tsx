@@ -275,7 +275,7 @@ export default function RouteDetailModal({
             )}
 
             {/* Google Map */}
-            {routes.length > 0 && !loading && (
+            {!loading && (
               <GoogleMapView
                 origin={origin}
                 destination={destination}
