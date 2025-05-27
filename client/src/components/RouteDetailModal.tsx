@@ -52,6 +52,10 @@ export default function RouteDetailModal({
 
   useEffect(() => {
     if (isOpen && origin && destination) {
+      // ルートデータをリセットしてから新しいデータを取得
+      setRoutes([]);
+      setSelectedRouteIndex(0);
+      setError(null);
       fetchRoutes();
     }
   }, [isOpen, origin, destination, travelMode, avoidTolls]);
@@ -61,34 +65,7 @@ export default function RouteDetailModal({
     setError(null);
     
     try {
-      // ルートのデモデータを作成（APIが機能していない場合に使用）
-      const mockData = {
-        success: true,
-        origin: origin,
-        destination: destination,
-        routes: [
-          {
-            routeIndex: 0,
-            summary: "主要道路",
-            distance: "10.5 km",
-            duration: "25分",
-            distanceValue: 10500,
-            durationValue: 1500,
-            polyline: "abc123",
-            warnings: []
-          },
-          {
-            routeIndex: 1,
-            summary: "高速道路",
-            distance: "12.0 km",
-            duration: "15分",
-            distanceValue: 12000,
-            durationValue: 900,
-            polyline: "def456",
-            warnings: ["高速道路を含むルート"]
-          }
-        ]
-      };
+      console.log("詳細設定モーダル: ルート取得開始", { origin, destination, travelMode, avoidTolls });
       
       const response = await fetch("/api/get-routes", {
         method: "POST",
@@ -103,47 +80,31 @@ export default function RouteDetailModal({
         }),
       });
 
-      // レスポンスをコンソールに出力して問題を診断
-      console.log("API response:", response);
-      
       const data = await response.json();
-      console.log("API data:", data);
+      console.log("詳細設定モーダル: API応答データ", data);
 
       if (!response.ok) {
         throw new Error(data.error || "ルートの取得に失敗しました");
       }
       
-      // API応答かデモデータを使用
+      // ルートデータが正常に取得できた場合
       if (data.routes && data.routes.length > 0) {
+        console.log("詳細設定モーダル: ルートデータを設定", data.routes.length, "個のルート");
         setRoutes(data.routes);
+        setSelectedRouteIndex(0); // デフォルトで最初のルートを選択
+        console.log("詳細設定モーダル: デフォルトルート選択完了");
       } else {
-        console.log("Using mock data instead");
-        setRoutes(mockData.routes);
+        throw new Error("利用可能なルートが見つかりませんでした");
       }
       
-      setSelectedRouteIndex(0);
     } catch (error: any) {
-      console.error("Route fetch error:", error);
+      console.error("詳細設定モーダル: ルート取得エラー", error);
       setError(error.message);
       toast({
         title: "エラー",
         description: error.message,
         variant: "destructive",
       });
-      
-      // エラー時はデモデータを設定
-      setRoutes([
-        {
-          routeIndex: 0,
-          summary: "デフォルトルート",
-          distance: "10.5 km",
-          duration: "25分",
-          distanceValue: 10500,
-          durationValue: 1500,
-          polyline: "",
-          warnings: ["APIエラーのため、推定データです"]
-        }
-      ]);
     } finally {
       setLoading(false);
     }
