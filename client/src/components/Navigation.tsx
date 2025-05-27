@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Home, HelpCircle, Newspaper, Map } from "lucide-react";
+import { Menu, X, Home, HelpCircle, Newspaper } from "lucide-react";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

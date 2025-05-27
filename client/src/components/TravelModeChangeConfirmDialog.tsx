@@ -28,16 +28,10 @@ export default function TravelModeChangeConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>移動手段の変更確認</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-3">
-            <p>
-              現在、いくつかの目的地にはカスタムルート設定が適用されています。
-            </p>
-            <p>
-              移動手段を「{getTravelModeText(newTravelMode)}」に変更すると、これらの設定はすべて解除されます。
-            </p>
-            <p className="font-medium text-foreground">
-              よろしいですか？
-            </p>
+          <AlertDialogDescription>
+            現在、いくつかの目的地にはカスタムルート設定が適用されています。
+            移動手段を「{getTravelModeText(newTravelMode)}」に変更すると、これらの設定はすべて解除されます。
+            よろしいですか？
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
