@@ -26,7 +26,10 @@ export default function GoogleMapView({
   });
   
   // Google Maps APIのロード状態を管理
-  const { isLoaded, loadError } = useGoogleMaps({ apiKey: config?.apiKey });
+  const { isLoaded, loadError } = useGoogleMaps({ 
+    apiKey: config?.apiKey, 
+    libraries: ['places', 'geometry'] 
+  });
   
   // ルート表示の状態を管理
   const { mapRef, error } = useGoogleMapsDirections({

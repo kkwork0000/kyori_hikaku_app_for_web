@@ -19,7 +19,7 @@ interface UseGoogleMapsReturn {
   loadError: Error | null;
 }
 
-export function useGoogleMaps({ apiKey, libraries = ['places'] }: GoogleMapsHookProps): UseGoogleMapsReturn {
+export function useGoogleMaps({ apiKey, libraries = ['places', 'geometry'] }: GoogleMapsHookProps): UseGoogleMapsReturn {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
   const scriptLoadedRef = useRef(false);
@@ -194,22 +194,40 @@ export function useGoogleMapsDirections({
       }
 
       if (polyline) {
-        // ポリラインでルートを描画（APIから取得したポリラインがある場合）
-        const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
-        const routePath = new window.google.maps.Polyline({
-          path: decodedPath,
-          strokeColor: '#1976D2',
-          strokeOpacity: 0.8,
-          strokeWeight: 5,
-        });
+        console.log('ポリラインを表示します:', polyline.substring(0, 50) + '...');
         
-        routePath.setMap(map);
-        setDirections(routePath);
+        // Geometry APIが利用可能かチェック
+        if (!window.google.maps.geometry || !window.google.maps.geometry.encoding) {
+          console.error('Google Maps Geometry library が読み込まれていません');
+          setError('地図ライブラリの読み込みに失敗しました');
+          return;
+        }
         
-        // マップの範囲を設定
-        const bounds = new window.google.maps.LatLngBounds();
-        decodedPath.forEach(point => bounds.extend(point));
-        map.fitBounds(bounds);
+        try {
+          // ポリラインでルートを描画（APIから取得したポリラインがある場合）
+          const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
+          console.log('デコードされたパス:', decodedPath.length, '個のポイント');
+          
+          const routePath = new window.google.maps.Polyline({
+            path: decodedPath,
+            strokeColor: '#1976D2',
+            strokeOpacity: 0.8,
+            strokeWeight: 5,
+          });
+          
+          routePath.setMap(map);
+          setDirections(routePath);
+          console.log('ポリラインを地図に追加しました');
+          
+          // マップの範囲を設定
+          const bounds = new window.google.maps.LatLngBounds();
+          decodedPath.forEach(point => bounds.extend(point));
+          map.fitBounds(bounds);
+          console.log('地図の表示範囲を調整しました');
+        } catch (err) {
+          console.error('ポリライン表示エラー:', err);
+          setError('ルートの表示に失敗しました');
+        }
       } else {
         // DirectionsServiceを使用してルートを取得
         const directionsService = new window.google.maps.DirectionsService();
