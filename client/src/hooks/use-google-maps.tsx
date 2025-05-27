@@ -195,11 +195,9 @@ export function useGoogleMapsDirections({
 
       if (polyline && window.google?.maps?.geometry?.encoding) {
         try {
-          console.log('詳細設定モーダル: ポリラインを地図に表示開始', polyline.substring(0, 50) + '...');
+          console.log('ポリラインを表示します');
           // ポリラインでルートを描画（APIから取得したポリラインがある場合）
           const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
-          console.log('詳細設定モーダル: ポリライン解析完了、ポイント数:', decodedPath.length);
-          
           const routePath = new window.google.maps.Polyline({
             path: decodedPath,
             strokeColor: '#1976D2',
@@ -209,17 +207,13 @@ export function useGoogleMapsDirections({
           
           routePath.setMap(map);
           setDirections(routePath);
-          console.log('詳細設定モーダル: ポリライン地図に設定完了');
           
           // マップの範囲を設定
           const bounds = new window.google.maps.LatLngBounds();
           decodedPath.forEach(point => bounds.extend(point));
           map.fitBounds(bounds);
-          console.log('詳細設定モーダル: 地図の表示範囲調整完了');
-          
-          setError(null);
         } catch (err) {
-          console.error('詳細設定モーダル: ポリライン表示エラー:', err);
+          console.error('ポリライン表示エラー:', err);
           setError('ルートの表示に失敗しました');
         }
       } else {
