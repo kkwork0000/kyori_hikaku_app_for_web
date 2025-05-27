@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Home, HelpCircle, Newspaper } from "lucide-react";
+import { Menu, X, Home, HelpCircle, Newspaper, Map } from "lucide-react";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +15,12 @@ export default function Navigation() {
     { path: "/articles", label: "紹介記事", icon: Newspaper },
     // { path: "/test", label: "APIテスト", icon: HelpCircle }, // 将来の開発用に保持
   ];
+
+  // <!--ここからテスト-->
+  const testItems = [
+    { href: "/MapTest.html", label: "地図テストページ", icon: Map },
+  ];
+  // <!--ここまでテスト-->
 
   return (
     <>
@@ -75,6 +81,28 @@ export default function Navigation() {
                   </Link>
                 );
               })}
+              
+              {/* <!--ここからテスト--> */}
+              <div className="border-t border-gray-200 mt-4 pt-4">
+                <h3 className="text-sm font-semibold text-gray-500 px-4 mb-2">テスト用</h3>
+                {testItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMenu}
+                      className="block py-3 px-4 rounded-lg transition-colors hover:bg-gray-100"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Icon className="inline-block h-5 w-5 text-primary mr-3" />
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </div>
+              {/* <!--ここまでテスト--> */}
             </nav>
           </div>
         </div>
