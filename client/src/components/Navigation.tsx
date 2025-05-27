@@ -13,14 +13,7 @@ export default function Navigation() {
     { path: "/", label: "トップページ（距離比較）", icon: Home },
     { path: "/how-to", label: "使い方", icon: HelpCircle },
     { path: "/articles", label: "紹介記事", icon: Newspaper },
-    // { path: "/test", label: "APIテスト", icon: HelpCircle }, // 将来の開発用に保持
   ];
-
-  // <!--ここからテスト-->
-  const testItems = [
-    { path: "/map-test", label: "地図テストページ", icon: Map },
-  ];
-  // <!--ここまでテスト-->
 
   return (
     <>
@@ -81,31 +74,6 @@ export default function Navigation() {
                   </Link>
                 );
               })}
-              
-              {/* <!--ここからテスト--> */}
-              <div className="border-t border-gray-200 mt-4 pt-4">
-                <h3 className="text-sm font-semibold text-gray-500 px-4 mb-2">テスト用</h3>
-                {testItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      href={item.path}
-                      onClick={closeMenu}
-                      className={`block py-3 px-4 rounded-lg transition-colors ${
-                        isActive
-                          ? "bg-blue-50 text-primary border-l-4 border-primary"
-                          : "hover:bg-gray-100"
-                      }`}
-                    >
-                      <Icon className="inline-block h-5 w-5 text-primary mr-3" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-              {/* <!--ここまでテスト--> */}
             </nav>
           </div>
         </div>
