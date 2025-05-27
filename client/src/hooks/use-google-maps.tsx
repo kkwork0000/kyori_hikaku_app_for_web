@@ -42,18 +42,8 @@ export function useGoogleMaps({ apiKey, libraries = ['places', 'geometry'] }: Go
 
     // コールバック関数を定義
     window.initMap = () => {
-      // Geometry libraryが利用可能かチェック
-      const checkGeometry = () => {
-        if (window.google && window.google.maps && window.google.maps.geometry) {
-          console.log('Google Maps Geometry library loaded successfully');
-          setIsLoaded(true);
-          window.googleMapsLoaded = true;
-        } else {
-          console.log('Waiting for Google Maps Geometry library...');
-          setTimeout(checkGeometry, 100);
-        }
-      };
-      checkGeometry();
+      setIsLoaded(true);
+      window.googleMapsLoaded = true;
     };
 
     // スクリプトをロード
@@ -203,47 +193,29 @@ export function useGoogleMapsDirections({
         }
       }
 
-      if (polyline) {
-        console.log('ポリラインを表示します:', polyline.substring(0, 50) + '...');
-        
-        // Geometry APIが利用可能になるまで待機
-        const waitForGeometry = () => {
-          if (!window.google?.maps?.geometry?.encoding) {
-            console.log('Google Maps Geometry library が読み込まれていません - 待機中...');
-            setTimeout(waitForGeometry, 100);
-            return;
-          }
+      if (polyline && window.google?.maps?.geometry?.encoding) {
+        try {
+          console.log('ポリラインを表示します');
+          // ポリラインでルートを描画（APIから取得したポリラインがある場合）
+          const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
+          const routePath = new window.google.maps.Polyline({
+            path: decodedPath,
+            strokeColor: '#1976D2',
+            strokeOpacity: 0.8,
+            strokeWeight: 5,
+          });
           
-          console.log('Google Maps Geometry library が利用可能になりました');
+          routePath.setMap(map);
+          setDirections(routePath);
           
-          try {
-            // ポリラインでルートを描画（APIから取得したポリラインがある場合）
-            const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
-            console.log('デコードされたパス:', decodedPath.length, '個のポイント');
-            
-            const routePath = new window.google.maps.Polyline({
-              path: decodedPath,
-              strokeColor: '#1976D2',
-              strokeOpacity: 0.8,
-              strokeWeight: 5,
-            });
-            
-            routePath.setMap(map);
-            setDirections(routePath);
-            console.log('ポリラインを地図に追加しました');
-            
-            // マップの範囲を設定
-            const bounds = new window.google.maps.LatLngBounds();
-            decodedPath.forEach(point => bounds.extend(point));
-            map.fitBounds(bounds);
-            console.log('地図の表示範囲を調整しました');
-          } catch (err) {
-            console.error('ポリライン表示エラー:', err);
-            setError('ルートの表示に失敗しました');
-          }
-        };
-        
-        waitForGeometry();
+          // マップの範囲を設定
+          const bounds = new window.google.maps.LatLngBounds();
+          decodedPath.forEach(point => bounds.extend(point));
+          map.fitBounds(bounds);
+        } catch (err) {
+          console.error('ポリライン表示エラー:', err);
+          setError('ルートの表示に失敗しました');
+        }
       } else {
         // DirectionsServiceを使用してルートを取得
         const directionsService = new window.google.maps.DirectionsService();
