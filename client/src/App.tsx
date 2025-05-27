@@ -28,12 +28,12 @@ function App() {
       <TooltipProvider>
         <div className="min-h-screen bg-neutral">
           <Navigation />
-          <main className="max-w-md mx-auto p-4 pb-20">
+          <main className="max-w-md md:max-w-4xl mx-auto p-4 pb-20">
             <Router />
           </main>
           
           {/* Advertisement Banner */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 max-w-md md:max-w-4xl mx-auto">
             <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-center text-white">
               <div className="text-xs text-blue-100 mb-1">広告</div>
               <div className="font-semibold mb-1">新しいサービスをお試しください</div>

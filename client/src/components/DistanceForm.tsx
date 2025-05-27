@@ -378,6 +378,7 @@ export default function DistanceForm() {
             <div className="space-y-3 mt-2">
               {destinations.map((destination, index) => (
                 <div key={index} className="space-y-2">
+                  {/* 目的地入力と削除ボタン */}
                   <div className="flex items-center gap-2">
                     {googleMapsLoaded ? (
                       <PlaceAutocomplete
@@ -411,20 +412,23 @@ export default function DistanceForm() {
                         />
                       </div>
                     )}
-                    {destination.trim() && origin.trim() && (
-                      <Button
-                        type="button"
-                        variant={
-                          hasCustomSettings(index) ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => openRouteDetailModal(index)}
-                        className="px-3"
-                      >
-                        <Settings className="h-4 w-4 mr-1" />
-                        詳細設定
-                      </Button>
-                    )}
+                    {/* PCでは詳細設定ボタンも横並び、削除ボタンは常に表示 */}
+                    <div className="hidden md:flex items-center gap-2">
+                      {destination.trim() && origin.trim() && (
+                        <Button
+                          type="button"
+                          variant={
+                            hasCustomSettings(index) ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => openRouteDetailModal(index)}
+                          className="px-3"
+                        >
+                          <Settings className="h-4 w-4 mr-1" />
+                          詳細設定
+                        </Button>
+                      )}
+                    </div>
                     {destinations.length > 1 && (
                       <Button
                         type="button"
@@ -437,6 +441,25 @@ export default function DistanceForm() {
                       </Button>
                     )}
                   </div>
+                  
+                  {/* モバイルでは詳細設定ボタンを1行下に右寄せで表示 */}
+                  {destination.trim() && origin.trim() && (
+                    <div className="md:hidden flex justify-end">
+                      <Button
+                        type="button"
+                        variant={
+                          hasCustomSettings(index) ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => openRouteDetailModal(index)}
+                        className="px-3"
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        詳細設定
+                      </Button>
+                    </div>
+                  )}
+                  
                   {hasCustomSettings(index) && (
                     <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
                       カスタム設定適用済み

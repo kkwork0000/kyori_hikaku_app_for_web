@@ -18,7 +18,7 @@ export default function Navigation() {
   return (
     <>
       <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-md md:max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/">
             <h1 className="text-lg font-bold text-primary cursor-pointer">
               距離比較アプリ
