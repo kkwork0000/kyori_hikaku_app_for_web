@@ -40,8 +40,19 @@ export default function GoogleMapView({
     polyline
   });
 
+  console.log("GoogleMapView: レンダリング状態", {
+    hasApiKey: !!config?.apiKey,
+    isLoaded,
+    origin,
+    destination,
+    selectedRoute,
+    hasPolyline: !!polyline,
+    error
+  });
+
   // APIキー取得中またはGoogle Maps API読み込み中の表示
   if (!config?.apiKey || !isLoaded) {
+    console.log("GoogleMapView: ローディング中", { hasApiKey: !!config?.apiKey, isLoaded });
     return (
       <div className="bg-gray-100 rounded-lg p-8 text-center h-[300px] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
