@@ -217,31 +217,37 @@ export function useGoogleMapsDirections({
           setError('ルートの表示に失敗しました');
         }
       } else {
-        console.log('ポリラインなし - マーカーのみ表示');
-        // ポリラインがない場合は、マーカーだけ表示して地図の中心を設定
-        const geocoder = new window.google.maps.Geocoder();
-        
-        // 出発地と目的地の座標を取得してマップの範囲を設定
-        let originLocation: any = null;
-        let destinationLocation: any = null;
-        
-        geocoder.geocode({ address: origin }, (results: any, status: any) => {
-          if (status === 'OK' && results[0]) {
-            originLocation = results[0].geometry.location;
-            
-            geocoder.geocode({ address: destination }, (results: any, status: any) => {
-              if (status === 'OK' && results[0]) {
-                destinationLocation = results[0].geometry.location;
-                
-                // 両方の位置が取得できたら地図の範囲を設定
-                const bounds = new window.google.maps.LatLngBounds();
-                bounds.extend(originLocation);
-                bounds.extend(destinationLocation);
-                map.fitBounds(bounds);
-              }
-            });
-          }
+        // DirectionsServiceを使用してルートを取得
+        const directionsService = new window.google.maps.DirectionsService();
+        const directionsRenderer = new window.google.maps.DirectionsRenderer({
+          map,
+          suppressMarkers: false,
+          preserveViewport: false,
+          polylineOptions: {
+            strokeColor: '#1976D2',
+            strokeWeight: 5,
+          },
         });
+
+        directionsService.route(
+          {
+            origin,
+            destination,
+            travelMode: window.google.maps.TravelMode[travelMode.toUpperCase()],
+            provideRouteAlternatives: true,
+          },
+          (result, status) => {
+            if (status === 'OK') {
+              directionsRenderer.setDirections(result);
+              directionsRenderer.setRouteIndex(selectedRoute);
+              setDirections(directionsRenderer);
+              setError(null);
+            } else {
+              console.error('Directions request failed:', status);
+              setError('ルートの取得に失敗しました');
+            }
+          }
+        );
       }
     } catch (err) {
       console.error('Directions error:', err);
