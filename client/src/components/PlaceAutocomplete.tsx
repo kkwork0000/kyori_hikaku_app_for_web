@@ -143,7 +143,15 @@ export default function PlaceAutocomplete({
 
           // フォームの値を「施設名 住所」形式で更新
           const displayValue = `${placeData.name} ${placeData.address}`;
+          console.log('Place selected:', { name: placeData.name, address: placeData.address, displayValue });
           onChange(displayValue, placeData);
+          setSuggestions([]);
+          setShowSuggestions(false);
+        } else {
+          // ステータスがOKでない場合も基本情報で「施設名 住所」形式で更新
+          const displayValue = `${suggestion.name} ${suggestion.address}`;
+          console.log('Place details failed, using suggestion:', { name: suggestion.name, address: suggestion.address, displayValue });
+          onChange(displayValue, suggestion);
           setSuggestions([]);
           setShowSuggestions(false);
         }
