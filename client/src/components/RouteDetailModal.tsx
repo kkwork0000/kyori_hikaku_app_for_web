@@ -60,6 +60,72 @@ export default function RouteDetailModal({
     }
   }, [isOpen, origin, destination, travelMode, avoidTolls]);
 
+  // 自動的に地図を表示する関数
+  const autoDisplayMap = () => {
+    console.log('自動地図表示: 開始');
+    
+    // 地図要素を取得
+    const mapElement = document.querySelector('[data-testid="google-map"]');
+    if (!mapElement) {
+      console.log('自動地図表示: 地図要素が見つかりません');
+      return;
+    }
+    
+    console.log('自動地図表示: 地図要素が見つかりました');
+    
+    if (!window.google || !window.google.maps) {
+      console.log('自動地図表示: Google Maps API未利用可能');
+      return;
+    }
+    
+    console.log('自動地図表示: Google Maps API利用可能');
+    
+    // 地図インスタンスを作成または取得
+    let mapInstance;
+    if (mapElement.__mapInstance) {
+      mapInstance = mapElement.__mapInstance;
+      console.log('自動地図表示: 既存の地図インスタンスを使用');
+    } else {
+      console.log('自動地図表示: 新しい地図インスタンスを作成');
+      mapInstance = new window.google.maps.Map(mapElement, {
+        center: { lat: 35.6895, lng: 139.6917 },
+        zoom: 13,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false,
+      });
+      mapElement.__mapInstance = mapInstance;
+    }
+    
+    // DirectionsServiceとDirectionsRendererを作成
+    const directionsService = new window.google.maps.DirectionsService();
+    const directionsRenderer = new window.google.maps.DirectionsRenderer();
+    directionsRenderer.setMap(mapInstance);
+    
+    // ルートリクエストを作成
+    const request = {
+      origin: origin,
+      destination: destination,
+      travelMode: window.google.maps.TravelMode[travelMode.toUpperCase()],
+    };
+    
+    console.log('自動地図表示: ルート計算開始', request);
+    
+    // ルートを計算して表示
+    directionsService.route(request, (result, status) => {
+      if (status === window.google.maps.DirectionsStatus.OK && result) {
+        console.log('自動地図表示: ルート計算成功');
+        directionsRenderer.setDirections(result);
+        
+        // 地図のリサイズとフィット
+        window.google.maps.event.trigger(mapInstance, 'resize');
+        mapInstance.fitBounds(result.routes[0].bounds);
+      } else {
+        console.log('自動地図表示: ルート計算失敗', status);
+      }
+    });
+  };
+
   const fetchRoutes = async () => {
     setLoading(true);
     setError(null);
@@ -93,6 +159,11 @@ export default function RouteDetailModal({
         setRoutes(data.routes);
         setSelectedRouteIndex(0); // デフォルトで最初のルートを選択
         console.log("詳細設定モーダル: デフォルトルート選択完了");
+        
+        // ルートデータ準備完了後、自動的に地図を表示
+        setTimeout(() => {
+          autoDisplayMap();
+        }, 500); // 地図要素の準備を待つ
       } else {
         throw new Error("利用可能なルートが見つかりませんでした");
       }
