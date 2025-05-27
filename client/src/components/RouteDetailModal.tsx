@@ -275,13 +275,13 @@ export default function RouteDetailModal({
             )}
 
             {/* Google Map */}
-            {!loading && (
+            {!loading && routes.length > 0 && routes[selectedRouteIndex] && (
               <GoogleMapView
                 origin={origin}
                 destination={destination}
                 travelMode={travelMode}
                 selectedRoute={selectedRouteIndex}
-                polyline={routes[selectedRouteIndex]?.polyline}
+                polyline={routes[selectedRouteIndex].polyline}
               />
             )}
             
@@ -293,7 +293,7 @@ export default function RouteDetailModal({
             )}
             
             {routes.length === 0 && !loading && (
-              <div className="bg-gray-100 rounded-lg p-8 text-center">
+              <div className="bg-gray-100 rounded-lg p-8 text-center h-[300px] flex items-center justify-center">
                 <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
                   ルートが取得できませんでした
