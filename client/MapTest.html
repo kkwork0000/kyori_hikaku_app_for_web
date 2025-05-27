@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps テスト</title>
+    <style>
+        /*ここからテスト*/
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        #map {
+            height: 500px;
+            width: 100%;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+        
+        .info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        /*ここまでテスト*/
+    </style>
+</head>
+<body>
+    <!--ここからテスト-->
+    <div class="info">
+        <h2>Google Maps JavaScript API テスト</h2>
+        <p><strong>出発地:</strong> 東京駅（〒100-0005 東京都千代田区丸の内1丁目9）</p>
+        <p><strong>目的地:</strong> 新宿駅（〒160-0022 東京都新宿区新宿3丁目38−1）</p>
+        <p><strong>移動手段:</strong> 車（DRIVING）</p>
+        <p><strong>地図中心:</strong> 東京駅、ズーム14</p>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script>
+        let map;
+        
+        function initMap() {
+            // 東京駅の座標
+            const tokyoStation = { lat: 35.6812362, lng: 139.7671248 };
+            // 新宿駅の座標
+            const shinjukuStation = { lat: 35.6896067, lng: 139.7005713 };
+            
+            // 地図を初期化（東京駅を中心にズーム14で表示）
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 14,
+                center: tokyoStation,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+            });
+            
+            // 東京駅にマーカーを追加
+            const tokyoMarker = new google.maps.Marker({
+                position: tokyoStation,
+                map: map,
+                title: "東京駅（出発地）",
+                icon: {
+                    url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                }
+            });
+            
+            // 新宿駅にマーカーを追加
+            const shinjukuMarker = new google.maps.Marker({
+                position: shinjukuStation,
+                map: map,
+                title: "新宿駅（目的地）",
+                icon: {
+                    url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                }
+            });
+            
+            // 情報ウィンドウを追加
+            const tokyoInfoWindow = new google.maps.InfoWindow({
+                content: "<div><strong>東京駅</strong><br>〒100-0005 東京都千代田区丸の内1丁目9<br>（出発地）</div>"
+            });
+            
+            const shinjukuInfoWindow = new google.maps.InfoWindow({
+                content: "<div><strong>新宿駅</strong><br>〒160-0022 東京都新宿区新宿3丁目38−1<br>（目的地）</div>"
+            });
+            
+            // マーカークリック時の情報ウィンドウ表示
+            tokyoMarker.addListener("click", () => {
+                tokyoInfoWindow.open(map, tokyoMarker);
+            });
+            
+            shinjukuMarker.addListener("click", () => {
+                shinjukuInfoWindow.open(map, shinjukuMarker);
+            });
+            
+            console.log("Google Maps initialized successfully");
+            console.log("Tokyo Station:", tokyoStation);
+            console.log("Shinjuku Station:", shinjukuStation);
+        }
+        
+        // エラーハンドリング
+        window.gm_authFailure = function() {
+            console.error("Google Maps API authentication failed");
+            document.getElementById("map").innerHTML = "<div style='padding: 20px; text-align: center; color: red;'>Google Maps API認証エラー</div>";
+        };
+        
+        // APIキーを取得して地図を読み込み
+        async function loadGoogleMaps() {
+            try {
+                const response = await fetch('/api/google-maps-config');
+                const config = await response.json();
+                
+                if (!config.apiKey) {
+                    throw new Error('API key not found');
+                }
+                
+                // Google Maps APIスクリプトを動的に読み込み
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${config.apiKey}&callback=initMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                
+                console.log('Google Maps API script loaded with API key');
+            } catch (error) {
+                console.error('Failed to load Google Maps:', error);
+                document.getElementById("map").innerHTML = "<div style='padding: 20px; text-align: center; color: red;'>Google Maps APIの読み込みに失敗しました</div>";
+            }
+        }
+        
+        // ページ読み込み完了後にGoogle Mapsを読み込み
+        document.addEventListener('DOMContentLoaded', loadGoogleMaps);
+    </script>
+    <!--ここまでテスト-->
+</body>
+</html>
