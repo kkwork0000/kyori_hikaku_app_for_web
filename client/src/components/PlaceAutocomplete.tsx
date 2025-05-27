@@ -97,11 +97,14 @@ export default function PlaceAutocomplete({
           setIsLoading(false);
           
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-            const results: PlaceResult[] = predictions.slice(0, 5).map(prediction => ({
-              name: prediction.structured_formatting.main_text,
-              address: prediction.structured_formatting.secondary_text || prediction.description,
-              placeId: prediction.place_id
-            }));
+            const results: PlaceResult[] = predictions.slice(0, 5).map(prediction => {
+              console.log('Prediction data:', prediction);
+              return {
+                name: prediction.structured_formatting.main_text,
+                address: prediction.structured_formatting.secondary_text || prediction.description,
+                placeId: prediction.place_id
+              };
+            });
             
             setSuggestions(results);
             setShowSuggestions(true);
@@ -120,49 +123,44 @@ export default function PlaceAutocomplete({
   };
 
   const handleSuggestionClick = async (suggestion: PlaceResult) => {
-    if (!placesService.current) return;
+    console.log('Suggestion clicked:', suggestion);
+    
+    // 即座に「施設名 住所」形式で表示を更新
+    const displayValue = `${suggestion.name} ${suggestion.address}`;
+    console.log('Setting display value:', displayValue);
+    onChange(displayValue, suggestion);
+    setSuggestions([]);
+    setShowSuggestions(false);
 
-    // 詳細情報を取得
-    try {
-      const request = {
-        placeId: suggestion.placeId,
-        fields: ['name', 'formatted_address', 'geometry']
-      };
+    // バックグラウンドで詳細情報を取得（必要に応じて位置情報を更新）
+    if (placesService.current) {
+      try {
+        const request = {
+          placeId: suggestion.placeId,
+          fields: ['name', 'formatted_address', 'geometry']
+        };
 
-      placesService.current.getDetails(request, (place, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-          const placeData: PlaceResult = {
-            name: place.name || suggestion.name,
-            address: place.formatted_address || suggestion.address,
-            placeId: suggestion.placeId,
-            location: place.geometry?.location ? {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
-            } : undefined
-          };
+        placesService.current.getDetails(request, (place, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            const enhancedPlaceData: PlaceResult = {
+              name: place.name || suggestion.name,
+              address: place.formatted_address || suggestion.address,
+              placeId: suggestion.placeId,
+              location: place.geometry?.location ? {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              } : undefined
+            };
 
-          // フォームの値を「施設名 住所」形式で更新
-          const displayValue = `${placeData.name} ${placeData.address}`;
-          console.log('Place selected:', { name: placeData.name, address: placeData.address, displayValue });
-          onChange(displayValue, placeData);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        } else {
-          // ステータスがOKでない場合も基本情報で「施設名 住所」形式で更新
-          const displayValue = `${suggestion.name} ${suggestion.address}`;
-          console.log('Place details failed, using suggestion:', { name: suggestion.name, address: suggestion.address, displayValue });
-          onChange(displayValue, suggestion);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching place details:', error);
-      // エラーの場合は基本情報だけで更新
-      const displayValue = `${suggestion.name} ${suggestion.address}`;
-      onChange(displayValue, suggestion);
-      setSuggestions([]);
-      setShowSuggestions(false);
+            // 詳細情報が取得できた場合は、より正確な情報で再更新
+            const enhancedDisplayValue = `${enhancedPlaceData.name} ${enhancedPlaceData.address}`;
+            console.log('Enhanced place data:', enhancedPlaceData);
+            onChange(enhancedDisplayValue, enhancedPlaceData);
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching place details:', error);
+      }
     }
   };
 
