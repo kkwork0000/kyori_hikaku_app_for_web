@@ -67,6 +67,9 @@ export default function DistanceForm() {
   // 移動手段変更確認ダイアログのstate
   const [showTravelModeConfirm, setShowTravelModeConfirm] = useState(false);
   const [pendingTravelMode, setPendingTravelMode] = useState<TravelMode | null>(null);
+  
+  // 公共交通開発中ポップアップのstate
+  const [showTransitPopup, setShowTransitPopup] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -244,6 +247,16 @@ export default function DistanceForm() {
 
   // 移動手段変更ハンドラー
   const handleTravelModeChange = (newMode: TravelMode) => {
+    // 公共交通の場合は開発中ポップアップを表示
+    if (newMode === "transit") {
+      setShowTransitPopup(true);
+      // 5秒後に自動で非表示
+      setTimeout(() => {
+        setShowTransitPopup(false);
+      }, 5000);
+      return;
+    }
+
     if (hasCustomRouteSettings()) {
       // カスタム設定がある場合は確認ダイアログを表示
       setPendingTravelMode(newMode);
@@ -308,10 +321,10 @@ export default function DistanceForm() {
   };
 
   const travelModes = [
-    { mode: "driving" as TravelMode, label: "車", icon: Car },
-    { mode: "walking" as TravelMode, label: "徒歩", icon: Walking },
-    // { mode: "transit" as TravelMode, label: "公共交通", icon: Train }, // 将来の機能追加のため保持
-    { mode: "bicycling" as TravelMode, label: "自転車", icon: Bike },
+    { mode: "driving" as TravelMode, label: "車", icon: Car, disabled: false },
+    { mode: "transit" as TravelMode, label: "公共交通", icon: Train, disabled: true, developmentNote: "（開発中）" },
+    { mode: "walking" as TravelMode, label: "徒歩", icon: Walking, disabled: false },
+    { mode: "bicycling" as TravelMode, label: "自転車", icon: Bike, disabled: false },
   ];
 
   return (
@@ -489,7 +502,8 @@ export default function DistanceForm() {
             <Label className="text-sm font-medium text-text-secondary">
               移動手段
             </Label>
-            <div className="grid grid-cols-3 gap-3 mt-2">
+            {/* PC: 4つのボタンを1列に表示 */}
+            <div className="hidden md:grid grid-cols-4 gap-3 mt-2">
               {travelModes.map((mode) => {
                 const Icon = mode.icon;
                 return (
@@ -498,13 +512,78 @@ export default function DistanceForm() {
                     type="button"
                     variant={travelMode === mode.mode ? "default" : "outline"}
                     onClick={() => handleTravelModeChange(mode.mode)}
-                    className="p-3 h-auto flex flex-col items-center gap-2"
+                    disabled={mode.disabled}
+                    className={`p-3 h-auto flex flex-col items-center gap-1 ${
+                      mode.disabled 
+                        ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-300" 
+                        : ""
+                    }`}
                   >
                     <Icon className="h-5 w-5" />
                     <span className="text-sm font-medium">{mode.label}</span>
+                    {mode.developmentNote && (
+                      <span className="text-xs text-gray-400">{mode.developmentNote}</span>
+                    )}
                   </Button>
                 );
               })}
+            </div>
+            
+            {/* モバイル: 2行2列で表示 */}
+            <div className="md:hidden mt-2 space-y-3">
+              {/* 1行目: 車、公共交通 */}
+              <div className="grid grid-cols-2 gap-3">
+                {travelModes.slice(0, 2).map((mode) => {
+                  const Icon = mode.icon;
+                  return (
+                    <Button
+                      key={mode.mode}
+                      type="button"
+                      variant={travelMode === mode.mode ? "default" : "outline"}
+                      onClick={() => handleTravelModeChange(mode.mode)}
+                      disabled={mode.disabled}
+                      className={`p-3 h-auto flex flex-col items-center gap-1 ${
+                        mode.disabled 
+                          ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-300" 
+                          : ""
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-sm font-medium">{mode.label}</span>
+                      {mode.developmentNote && (
+                        <span className="text-xs text-gray-400">{mode.developmentNote}</span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              {/* 2行目: 徒歩、自転車 */}
+              <div className="grid grid-cols-2 gap-3">
+                {travelModes.slice(2, 4).map((mode) => {
+                  const Icon = mode.icon;
+                  return (
+                    <Button
+                      key={mode.mode}
+                      type="button"
+                      variant={travelMode === mode.mode ? "default" : "outline"}
+                      onClick={() => handleTravelModeChange(mode.mode)}
+                      disabled={mode.disabled}
+                      className={`p-3 h-auto flex flex-col items-center gap-1 ${
+                        mode.disabled 
+                          ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-300" 
+                          : ""
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-sm font-medium">{mode.label}</span>
+                      {mode.developmentNote && (
+                        <span className="text-xs text-gray-400">{mode.developmentNote}</span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -557,6 +636,62 @@ export default function DistanceForm() {
         onCancel={cancelTravelModeChange}
         newTravelMode={pendingTravelMode || "driving"}
       />
+
+      {/* 公共交通開発中ポップアップ */}
+      {showTransitPopup && (
+        <div 
+          className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm mx-4 transition-all duration-300 ${
+            showTransitPopup ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+          }`}
+          style={{
+            animation: showTransitPopup ? 'fadeIn 0.3s ease-out, fadeOut 0.3s ease-in 4.7s forwards' : undefined
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <Train className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-gray-900 mb-1">
+                機能開発中
+              </h3>
+              <p className="text-sm text-gray-600">
+                「公共交通ルートによる比較機能」は現在開発中です。今後のアップデートでご利用いただけるようになる予定です。
+              </p>
+            </div>
+            <button
+              onClick={() => setShowTransitPopup(false)}
+              className="flex-shrink-0 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+        
+        @keyframes fadeOut {
+          from {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px);
+          }
+        }
+      `}</style>
     </>
   );
 }
