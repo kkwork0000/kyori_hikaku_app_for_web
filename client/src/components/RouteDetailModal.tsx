@@ -228,7 +228,7 @@ export default function RouteDetailModal({
                     }}
                   />
                   <Label htmlFor="avoidTolls" className="text-sm">
-                    有料道路を避ける
+                    有料道路を使用しない
                   </Label>
                 </div>
               </div>
