@@ -5,7 +5,7 @@ import { insertUserUsageSchema, insertDistanceQuerySchema, insertArticleSchema }
 import { z } from "zod";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -43,74 +43,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Removed: Google Maps API key endpoint for security reasons
-  // All Google Maps API calls are now handled server-side
-
-  // Places API search endpoint (server-side only)
-  app.get("/api/places/search", async (req, res) => {
-    try {
-      const { query } = req.query;
-      
-      if (!query || typeof query !== 'string') {
-        return res.status(400).json({ error: "Query parameter is required" });
-      }
-      
-      if (!GOOGLE_MAPS_API_KEY) {
-        return res.status(500).json({ error: "Google Maps API key not configured" });
-      }
-
-      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&language=ja&key=${GOOGLE_MAPS_API_KEY}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (data.status === 'OK') {
-        const suggestions = data.results.slice(0, 5).map((place: any) => ({
-          name: place.name,
-          address: place.formatted_address,
-          placeId: place.place_id,
-          location: place.geometry?.location
-        }));
-        
-        res.json({ suggestions });
-      } else {
-        res.json({ suggestions: [] });
-      }
-    } catch (error) {
-      console.error('Places search error:', error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  // Place details endpoint (server-side only)
-  app.get("/api/places/details/:placeId", async (req, res) => {
-    try {
-      const { placeId } = req.params;
-      
-      if (!GOOGLE_MAPS_API_KEY) {
-        return res.status(500).json({ error: "Google Maps API key not configured" });
-      }
-
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&language=ja&key=${GOOGLE_MAPS_API_KEY}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (data.status === 'OK') {
-        const place = data.result;
-        res.json({
-          name: place.name,
-          address: place.formatted_address,
-          placeId: place.place_id,
-          location: place.geometry?.location
-        });
-      } else {
-        res.status(404).json({ error: "Place not found" });
-      }
-    } catch (error) {
-      console.error('Place details error:', error);
-      res.status(500).json({ error: "Internal server error" });
-    }
+  // Google Maps API key endpoint (for frontend use)
+  app.get("/api/google-maps-config", (req, res) => {
+    res.json({
+      apiKey: GOOGLE_MAPS_API_KEY || null,
+      libraries: ['places', 'geometry']
+    });
   });
 
   // New endpoint: /get-distance for Google Distance Matrix API
@@ -364,11 +302,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key: GOOGLE_MAPS_API_KEY
       });
 
+      console.log("Making Distance Matrix API request:", `${baseUrl}?${params}`);
       const response = await fetch(`${baseUrl}?${params}`);
       const data = await response.json();
+      
+      console.log("Distance Matrix API response:", JSON.stringify(data, null, 2));
 
       if (data.status !== 'OK') {
-        return res.status(400).json({ message: "Google Maps API error", error: data.status });
+        console.error("Distance Matrix API error:", {
+          status: data.status,
+          error_message: data.error_message,
+          full_response: data
+        });
+        return res.status(400).json({ 
+          message: "Google Maps API error", 
+          error: data.status,
+          error_message: data.error_message 
+        });
       }
 
       // Format results with custom route settings if available
