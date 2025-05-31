@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, X } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PlaceResult {
   name: string;
@@ -40,25 +41,39 @@ export default function PlaceAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Google Places Autocomplete Service
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  // Server-side API search for places
+  const searchPlaces = async (query: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiRequest(`/api/places/search?query=${encodeURIComponent(query)}`);
+      setSuggestions(response.suggestions || []);
+    } catch (error) {
+      console.error('Places search error:', error);
+      setSuggestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Google Maps APIが読み込まれているかチェック
-    if (window.google && window.google.maps && window.google.maps.places) {
-      autocompleteService.current = new window.google.maps.places.AutocompleteService();
-
-      // PlacesServiceの初期化には地図要素が必要
-      const mapDiv = document.createElement('div');
-      const map = new window.google.maps.Map(mapDiv);
-      placesService.current = new window.google.maps.places.PlacesService(map);
+    if (value.length >= 2) {
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      
+      suggestionTimeoutRef.current = setTimeout(() => {
+        searchPlaces(value);
+      }, 300);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
-  }, []);
+  }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     onChange(inputValue);
+    setShowSuggestions(inputValue.length >= 2);
 
     // 入力が空の場合は候補を非表示
     if (!inputValue.trim()) {
