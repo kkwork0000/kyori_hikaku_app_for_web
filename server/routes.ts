@@ -6,6 +6,7 @@ import { z } from "zod";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
+const FRONTEND_GOOGLE_MAPS_API_KEY = "AIzaSyDV-CnRnVjrMhv6-hAFFJgq7Qx_ze2S4FA";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -46,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Maps API key endpoint (for frontend use)
   app.get("/api/google-maps-config", (req, res) => {
     res.json({
-      apiKey: GOOGLE_MAPS_API_KEY || null,
+      apiKey: FRONTEND_GOOGLE_MAPS_API_KEY,
       libraries: ['places', 'geometry']
     });
   });
