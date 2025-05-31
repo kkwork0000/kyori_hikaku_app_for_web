@@ -5,7 +5,7 @@ import { insertUserUsageSchema, insertDistanceQuerySchema } from "@shared/schema
 import { z } from "zod";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
