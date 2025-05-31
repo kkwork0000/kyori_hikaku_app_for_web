@@ -302,11 +302,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key: GOOGLE_MAPS_API_KEY
       });
 
+      console.log("Making Distance Matrix API request:", `${baseUrl}?${params}`);
       const response = await fetch(`${baseUrl}?${params}`);
       const data = await response.json();
+      
+      console.log("Distance Matrix API response:", JSON.stringify(data, null, 2));
 
       if (data.status !== 'OK') {
-        return res.status(400).json({ message: "Google Maps API error", error: data.status });
+        console.error("Distance Matrix API error:", {
+          status: data.status,
+          error_message: data.error_message,
+          full_response: data
+        });
+        return res.status(400).json({ 
+          message: "Google Maps API error", 
+          error: data.status,
+          error_message: data.error_message 
+        });
       }
 
       // Format results with custom route settings if available
