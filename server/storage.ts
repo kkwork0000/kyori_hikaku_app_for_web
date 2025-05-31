@@ -1,4 +1,6 @@
-import { users, userUsage, distanceQuery, type User, type InsertUser, type UserUsage, type InsertUserUsage, type DistanceQuery, type InsertDistanceQuery } from "@shared/schema";
+import { users, userUsage, distanceQuery, articles, type User, type InsertUser, type UserUsage, type InsertUserUsage, type DistanceQuery, type InsertDistanceQuery, type Article, type InsertArticle } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -14,6 +16,13 @@ export interface IStorage {
   getDistanceQueries(userId: string): Promise<DistanceQuery[]>;
   getTotalUsersCount(): Promise<number>;
   getMonthlyQueriesCount(month: string): Promise<number>;
+
+  // Article operations
+  getAllArticles(page?: number, limit?: number): Promise<{ articles: Article[], total: number }>;
+  getArticleById(id: number): Promise<Article | undefined>;
+  createArticle(article: InsertArticle): Promise<Article>;
+  updateArticleViews(id: number): Promise<void>;
+  getPopularArticles(limit?: number): Promise<Article[]>;
 }
 
 export class MemStorage implements IStorage {

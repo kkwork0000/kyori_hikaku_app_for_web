@@ -26,6 +26,16 @@ export const distanceQuery = pgTable("distance_query", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const articles = pgTable("articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  thumbnail: text("thumbnail"),
+  content: text("content").notNull(),
+  views: integer("views").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -41,9 +51,18 @@ export const insertDistanceQuerySchema = createInsertSchema(distanceQuery).omit(
   createdAt: true,
 });
 
+export const insertArticleSchema = createInsertSchema(articles).omit({
+  id: true,
+  views: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUserUsage = z.infer<typeof insertUserUsageSchema>;
 export type UserUsage = typeof userUsage.$inferSelect;
 export type InsertDistanceQuery = z.infer<typeof insertDistanceQuerySchema>;
 export type DistanceQuery = typeof distanceQuery.$inferSelect;
+export type InsertArticle = z.infer<typeof insertArticleSchema>;
+export type Article = typeof articles.$inferSelect;
