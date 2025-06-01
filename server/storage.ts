@@ -159,6 +159,14 @@ export class DatabaseStorage implements IStorage {
     return article;
   }
 
+  async deleteArticle(id: number): Promise<boolean> {
+    const result = await db
+      .delete(articles)
+      .where(eq(articles.id, id))
+      .returning({ id: articles.id });
+    return result.length > 0;
+  }
+
   async updateArticleViews(id: number): Promise<void> {
     await db
       .update(articles)
