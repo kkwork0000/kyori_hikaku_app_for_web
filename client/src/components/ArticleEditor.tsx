@@ -199,7 +199,7 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
   };
 
   const setTextColor = (color: string) => {
-    editor?.chain().focus().setColor(color).run();
+    editor?.chain().focus().setMark('textStyle', { color }).run();
   };
 
   const setBackgroundColor = (color: string) => {
@@ -207,9 +207,9 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
   };
 
   const colors = [
-    '#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', 
-    '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000',
-    '#FFC0CB', '#A52A2A', '#808080', '#000080', '#800000'
+    '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', 
+    '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', 
+    '#008000', '#FFC0CB', '#A52A2A', '#808080', '#000080'
   ];
 
   const handleSave = async () => {
@@ -358,10 +358,13 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
 
         {/* プレビューモーダル */}
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" aria-describedby="preview-description">
             <DialogHeader>
               <DialogTitle>記事プレビュー</DialogTitle>
             </DialogHeader>
+            <div id="preview-description" className="sr-only">
+              記事の公開前プレビューを表示しています
+            </div>
             <div className="space-y-4">
               <div>
                 <h1 className="text-3xl font-bold">{title || 'タイトルなし'}</h1>
@@ -546,7 +549,9 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
                             <button
                               key={color}
                               type="button"
-                              className="w-5 h-5 rounded border-2 border-gray-300 hover:border-gray-500"
+                              className={`w-5 h-5 rounded border-2 hover:border-gray-500 ${
+                                color === '#FFFFFF' ? 'border-gray-500' : 'border-gray-300'
+                              }`}
                               style={{ backgroundColor: color }}
                               onClick={() => setTextColor(color)}
                             />
@@ -562,7 +567,9 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
                             <button
                               key={color}
                               type="button"
-                              className="w-5 h-5 rounded border-2 border-gray-300 hover:border-gray-500"
+                              className={`w-5 h-5 rounded border-2 hover:border-gray-500 ${
+                                color === '#FFFFFF' ? 'border-gray-500' : 'border-gray-300'
+                              }`}
                               style={{ backgroundColor: color }}
                               onClick={() => setBackgroundColor(color)}
                             />
