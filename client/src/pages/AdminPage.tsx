@@ -464,16 +464,19 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   )) || []}
-                  {(!articlesData?.articles || articlesData.articles.length === 0) && (
+                  {paginatedArticles.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-text-secondary">
-                        記事がありません
+                        {searchQuery ? '検索条件に一致する記事がありません' : '記事がありません'}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+            
+            {/* ページネーション（下部） */}
+            <PaginationComponent />
           </div>
         </TabsContent>
       </Tabs>
