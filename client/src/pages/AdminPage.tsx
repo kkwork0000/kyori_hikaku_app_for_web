@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLogin from "@/components/AdminLogin";
 import ArticleEditor from "@/components/ArticleEditor";
-import { LogOut, FileText, BarChart3, Edit, Trash2 } from "lucide-react";
+import { LogOut, FileText, BarChart3, Edit, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +17,14 @@ export default function AdminPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("stats");
+  
+  // 記事一覧の検索・フィルタリング状態
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -37,6 +47,43 @@ export default function AdminPage() {
     },
     enabled: isLoggedIn,
   });
+
+  // フィルタリングとソートされた記事データ
+  const filteredAndSortedArticles = articlesData?.articles
+    ? articlesData.articles
+        .filter((article: any) =>
+          article.title.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort((a: any, b: any) => {
+          const aValue = sortBy === "createdAt" ? new Date(a.createdAt) : new Date(a.updatedAt);
+          const bValue = sortBy === "createdAt" ? new Date(b.createdAt) : new Date(b.updatedAt);
+          
+          if (sortOrder === "desc") {
+            return bValue.getTime() - aValue.getTime();
+          } else {
+            return aValue.getTime() - bValue.getTime();
+          }
+        })
+    : [];
+
+  // ページネーション計算
+  const totalPages = Math.ceil(filteredAndSortedArticles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedArticles = filteredAndSortedArticles.slice(startIndex, endIndex);
+
+  // 検索クエリが変更されたらページを1に戻す
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  // ソート変更時もページを1に戻す
+  const handleSortChange = (field: string, order: string) => {
+    setSortBy(field);
+    setSortOrder(order);
+    setCurrentPage(1);
+  };
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -104,6 +151,87 @@ export default function AdminPage() {
   const handleCancelDelete = () => {
     setDeleteConfirmOpen(false);
     setArticleToDelete(null);
+  };
+
+  // ページネーションコンポーネント
+  const PaginationComponent = () => {
+    if (totalPages <= 1) return null;
+
+    const pageNumbers = [];
+    const showPages = 5; // 表示するページ番号の数
+    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let endPage = Math.min(totalPages, startPage + showPages - 1);
+
+    if (endPage - startPage + 1 < showPages) {
+      startPage = Math.max(1, endPage - showPages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-2 py-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="flex items-center gap-1"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          前へ
+        </Button>
+        
+        {startPage > 1 && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+            >
+              1
+            </Button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+        
+        {pageNumbers.map((pageNum) => (
+          <Button
+            key={pageNum}
+            variant={currentPage === pageNum ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCurrentPage(pageNum)}
+          >
+            {pageNum}
+          </Button>
+        ))}
+        
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+            >
+              {totalPages}
+            </Button>
+          </>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="flex items-center gap-1"
+        >
+          次へ
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
   };
 
   const handleLogout = () => {
@@ -233,6 +361,55 @@ export default function AdminPage() {
         <TabsContent value="articleList" className="mt-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-text-primary mb-4">記事一覧</h3>
+            
+            {/* 検索・並べ替え機能 */}
+            <div className="mb-4 space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="記事タイトルで検索..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select value={sortBy} onValueChange={(value) => handleSortChange(value, sortOrder)}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="並び順" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="createdAt">公開日</SelectItem>
+                      <SelectItem value="updatedAt">更新日</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={(value) => handleSortChange(sortBy, value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="順序" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desc">新しい順</SelectItem>
+                      <SelectItem value="asc">古い順</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* 検索結果の件数表示 */}
+              <div className="text-sm text-text-secondary">
+                {filteredAndSortedArticles.length}件の記事が見つかりました
+                {searchQuery && (
+                  <span className="ml-2">
+                    「{searchQuery}」の検索結果
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* ページネーション（上部） */}
+            <PaginationComponent />
+            
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
@@ -252,7 +429,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {articlesData?.articles?.map((article: any) => (
+                  {paginatedArticles?.map((article: any) => (
                     <tr key={article.id}>
                       <td className="px-4 py-3 text-text-primary font-medium">
                         {article.title}
