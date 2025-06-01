@@ -1,14 +1,21 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLogin from "@/components/AdminLogin";
 import ArticleEditor from "@/components/ArticleEditor";
-import { LogOut, FileText, BarChart3, Edit } from "lucide-react";
+import { LogOut, FileText, BarChart3, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [editingArticle, setEditingArticle] = useState<any>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: statsData, refetch } = useQuery({
     queryKey: ["/api/admin/stats"],
@@ -48,6 +55,47 @@ export default function AdminPage() {
     setEditingArticle(null);
     refetchArticles();
     refetch();
+  };
+
+  const handleDeleteClick = (article: any) => {
+    setArticleToDelete(article);
+    setDeleteConfirmOpen(true);
+  };
+
+  const deleteArticleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/articles/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: '記事を削除しました',
+        description: '記事が正常に削除されました。',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/articles'] });
+      refetchArticles();
+      refetch();
+      setDeleteConfirmOpen(false);
+      setArticleToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'エラーが発生しました',
+        description: error.message || '記事の削除に失敗しました。',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleConfirmDelete = () => {
+    if (articleToDelete) {
+      deleteArticleMutation.mutate(articleToDelete.id);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setArticleToDelete(null);
   };
 
   const handleLogout = () => {
@@ -208,15 +256,26 @@ export default function AdminPage() {
                         {new Date(article.updatedAt).toLocaleDateString('ja-JP')}
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditArticle(article)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          編集
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditArticle(article)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            編集
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteClick(article)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            削除
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )) || []}
@@ -233,6 +292,39 @@ export default function AdminPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* 削除確認ダイアログ */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>記事の削除</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-text-secondary">
+              「{articleToDelete?.title}」を削除しますか？
+            </p>
+            <p className="text-text-secondary mt-2 text-sm">
+              この操作は取り消すことができません。
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={deleteArticleMutation.isPending}
+            >
+              キャンセル
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteArticleMutation.isPending}
+            >
+              {deleteArticleMutation.isPending ? '削除中...' : '削除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -577,6 +577,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete article (admin only)
+  app.delete("/api/articles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteArticle(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      res.json({ message: "Article deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting article" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -22,6 +22,7 @@ export interface IStorage {
   getArticleById(id: number): Promise<Article | undefined>;
   createArticle(article: InsertArticle): Promise<Article>;
   updateArticle(id: number, article: InsertArticle): Promise<Article | undefined>;
+  deleteArticle(id: number): Promise<boolean>;
   updateArticleViews(id: number): Promise<void>;
   getPopularArticles(limit?: number): Promise<Article[]>;
 }
