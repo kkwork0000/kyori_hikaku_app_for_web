@@ -21,9 +21,17 @@ interface ArticlesResponse {
 }
 
 function ArticleCard({ article }: { article: Article }) {
-  const truncatedContent = article.content.length > 120 
-    ? article.content.substring(0, 120) + "..." 
-    : article.content;
+  // HTMLタグを除去してプレーンテキストに変換
+  const stripHtmlTags = (html: string) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  };
+
+  const plainTextContent = stripHtmlTags(article.content);
+  const truncatedContent = plainTextContent.length > 120 
+    ? plainTextContent.substring(0, 120) + "..." 
+    : plainTextContent;
 
   return (
     <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
