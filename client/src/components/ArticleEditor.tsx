@@ -56,8 +56,14 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      TextStyle,
-      Color,
+      TextStyle.configure({
+        HTMLAttributes: {
+          style: 'color: var(--color);',
+        },
+      }),
+      Color.configure({
+        types: ['textStyle'],
+      }),
       Highlight.configure({
         multicolor: true,
       }),
@@ -199,7 +205,7 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
   };
 
   const setTextColor = (color: string) => {
-    editor?.chain().focus().setMark('textStyle', { color }).run();
+    editor?.chain().focus().setColor(color).run();
   };
 
   const setBackgroundColor = (color: string) => {
