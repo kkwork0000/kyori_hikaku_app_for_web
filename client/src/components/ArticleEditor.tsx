@@ -102,14 +102,16 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
     },
     onSuccess: () => {
       toast({
-        title: '記事を保存しました',
-        description: '記事が正常に保存されました。',
+        title: '記事を公開しました',
+        description: '記事が正常に公開されました。',
       });
       queryClient.invalidateQueries({ queryKey: ['/api/articles'] });
+      setShowPreview(false);
       setTitle('');
       setThumbnail(null);
       setThumbnailPreview('');
-      editor?.commands.setContent('<p>ここに記事の内容を入力してください...</p>');
+      editor?.commands.setContent('');
+      setHtmlContent('');
       onSave?.();
     },
     onError: (error: any) => {
@@ -303,8 +305,8 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
           </div>
         </div>
 
-        {/* HTML編集モード切り替えとプレビューボタン */}
-        <div className="flex justify-between items-center mb-4">
+        {/* HTML編集モード切り替えボタン */}
+        <div className="flex justify-start items-center mb-4">
           <Button
             type="button"
             variant={isHtmlMode ? 'default' : 'outline'}
@@ -313,15 +315,6 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
           >
             <Code className="h-4 w-4" />
             HTML編集モード
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2"
-          >
-            <Eye className="h-4 w-4" />
-            プレビュー
           </Button>
         </div>
 
@@ -341,24 +334,15 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
           )}
         </div>
 
-        {/* 保存ボタン */}
+        {/* プレビューボタン */}
         <div className="flex justify-end">
-          <Button 
-            onClick={handleSave}
-            disabled={saveArticleMutation.isPending}
-            className="min-w-[120px]"
+          <Button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-2 min-w-[120px]"
           >
-            {saveArticleMutation.isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                保存中...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                記事を公開
-              </div>
-            )}
+            <Eye className="h-4 w-4" />
+            プレビュー
           </Button>
         </div>
 
@@ -388,6 +372,27 @@ export default function ArticleEditor({ onSave }: ArticleEditorProps) {
                   __html: isHtmlMode ? htmlContent : editor?.getHTML() || '' 
                 }}
               />
+              
+              {/* 公開ボタン */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  onClick={handleSave}
+                  disabled={saveArticleMutation.isPending}
+                  className="min-w-[120px]"
+                >
+                  {saveArticleMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      公開中...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Save className="h-4 w-4" />
+                      記事を公開
+                    </div>
+                  )}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
