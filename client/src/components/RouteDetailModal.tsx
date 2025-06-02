@@ -268,7 +268,10 @@ export default function RouteDetailModal({
                     <Card key={index} className={`cursor-pointer transition-colors ${
                       selectedRouteIndex === index ? "border-primary bg-blue-50" : "hover:bg-gray-50"
                     }`}>
-                      <CardContent className="p-3">
+                      <CardContent 
+                        className="p-3"
+                        onClick={() => setSelectedRouteIndex(index)}
+                      >
                         <div className="flex items-center space-x-3">
                           <RadioGroupItem value={index.toString()} id={`route-${index}`} />
                           <div className="flex-1">

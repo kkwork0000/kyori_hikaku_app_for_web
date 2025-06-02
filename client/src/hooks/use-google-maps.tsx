@@ -134,69 +134,87 @@ export function useGoogleMapsDirections({
   useEffect(() => {
     if (!map || !origin || !destination || !window.google) return;
 
-    try {
-      // 既存のマーカーを削除
-      if (map.markers) {
-        map.markers.forEach((marker: any) => marker.setMap(null));
+    const addMarkersFromPolyline = async () => {
+      try {
+        // 既存のマーカーを削除
+        if (map.markers) {
+          map.markers.forEach((marker: any) => marker.setMap(null));
+        }
+        map.markers = [];
+
+        // サーバーからルート情報を取得してマーカー位置を取得
+        const response = await fetch('/api/get-routes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origin,
+            destination,
+            mode: travelMode,
+            avoidTolls: false
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.routes && data.routes.length > 0) {
+            // ポリラインから開始点と終了点を取得
+            const firstRoute = data.routes[0];
+            if (firstRoute.polyline) {
+              const decodedPath = window.google.maps.geometry.encoding.decodePath(firstRoute.polyline);
+              
+              if (decodedPath.length > 0) {
+                const startPoint = decodedPath[0];
+                const endPoint = decodedPath[decodedPath.length - 1];
+
+                // 出発地マーカー
+                const originMarker = new window.google.maps.Marker({
+                  position: startPoint,
+                  map: map,
+                  title: `出発地: ${origin}`,
+                  icon: {
+                    url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                  }
+                });
+                
+                const originInfoWindow = new window.google.maps.InfoWindow({
+                  content: `<div><strong>出発地</strong><br>${origin}</div>`
+                });
+                
+                originMarker.addListener("click", () => {
+                  originInfoWindow.open(map, originMarker);
+                });
+
+                // 目的地マーカー
+                const destMarker = new window.google.maps.Marker({
+                  position: endPoint,
+                  map: map,
+                  title: `目的地: ${destination}`,
+                  icon: {
+                    url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                  }
+                });
+                
+                const destInfoWindow = new window.google.maps.InfoWindow({
+                  content: `<div><strong>目的地</strong><br>${destination}</div>`
+                });
+                
+                destMarker.addListener("click", () => {
+                  destInfoWindow.open(map, destMarker);
+                });
+
+                if (!map.markers) map.markers = [];
+                map.markers.push(originMarker, destMarker);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('マーカー追加でエラーが発生しましたが、処理を継続します:', error);
       }
-      map.markers = [];
+    };
 
-      // Geocoding Serviceを使用して住所から座標を取得
-      const geocoder = new window.google.maps.Geocoder();
-      
-      // 出発地のマーカー
-      geocoder.geocode({ address: origin }, (results: any, status: any) => {
-        if (status === 'OK' && results[0]) {
-          const originMarker = new window.google.maps.Marker({
-            position: results[0].geometry.location,
-            map: map,
-            title: `出発地: ${origin}`,
-            icon: {
-              url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-            }
-          });
-          
-          const originInfoWindow = new window.google.maps.InfoWindow({
-            content: `<div><strong>出発地</strong><br>${origin}</div>`
-          });
-          
-          originMarker.addListener("click", () => {
-            originInfoWindow.open(map, originMarker);
-          });
-
-          if (!map.markers) map.markers = [];
-          map.markers.push(originMarker);
-        }
-      });
-
-      // 目的地のマーカー
-      geocoder.geocode({ address: destination }, (results: any, status: any) => {
-        if (status === 'OK' && results[0]) {
-          const destMarker = new window.google.maps.Marker({
-            position: results[0].geometry.location,
-            map: map,
-            title: `目的地: ${destination}`,
-            icon: {
-              url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-            }
-          });
-          
-          const destInfoWindow = new window.google.maps.InfoWindow({
-            content: `<div><strong>目的地</strong><br>${destination}</div>`
-          });
-          
-          destMarker.addListener("click", () => {
-            destInfoWindow.open(map, destMarker);
-          });
-
-          if (!map.markers) map.markers = [];
-          map.markers.push(destMarker);
-        }
-      });
-    } catch (err) {
-      console.error('Marker creation error:', err);
-    }
-  }, [map, origin, destination]);
+    addMarkersFromPolyline();
+  }, [map, origin, destination, travelMode]);
 
   // ルートを表示
   useEffect(() => {
