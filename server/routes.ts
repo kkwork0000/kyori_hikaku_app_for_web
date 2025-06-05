@@ -523,9 +523,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "画像ファイルが必要です" });
       }
       
-      const fileUrl = `/uploads/${req.file.filename}`;
-      res.json({ url: fileUrl });
+      // 画像をBase64形式に変換
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+      
+      // アップロードされたファイルを削除（データベースに保存するため）
+      fs.unlinkSync(req.file.path);
+      
+      res.json({ url: base64Image });
     } catch (error) {
+      console.error('Thumbnail upload error:', error);
       res.status(500).json({ message: "画像のアップロードに失敗しました" });
     }
   });
@@ -536,9 +543,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "画像ファイルが必要です" });
       }
       
-      const fileUrl = `/uploads/${req.file.filename}`;
-      res.json({ url: fileUrl });
+      // 画像をBase64形式に変換
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+      
+      // アップロードされたファイルを削除（データベースに保存するため）
+      fs.unlinkSync(req.file.path);
+      
+      res.json({ url: base64Image });
     } catch (error) {
+      console.error('Image upload error:', error);
       res.status(500).json({ message: "画像のアップロードに失敗しました" });
     }
   });
