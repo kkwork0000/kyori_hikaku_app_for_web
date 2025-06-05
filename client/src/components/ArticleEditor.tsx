@@ -350,17 +350,7 @@ export default function ArticleEditor({ onSave, article, isEditing }: ArticleEdi
           )}
         </div>
 
-        {/* プレビューボタン */}
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            className="flex items-center gap-2 min-w-[120px]"
-          >
-            <Eye className="h-4 w-4" />
-            プレビュー
-          </Button>
-        </div>
+
 
         {/* プレビューモーダル */}
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -413,13 +403,22 @@ export default function ArticleEditor({ onSave, article, isEditing }: ArticleEdi
           </DialogContent>
         </Dialog>
 
-        {/* 文字装飾パネル（浮動） */}
+        {/* 固定操作ボタン（装飾・プレビュー） */}
         {!isHtmlMode && (
           <>
-            {/* 文字装飾ボタン */}
+            {/* プレビューボタン（右端） */}
             <Button
               type="button"
               className="fixed bottom-4 right-4 z-50 rounded-full w-12 h-12 p-0"
+              onClick={() => setShowPreview(true)}
+            >
+              <Eye className="h-6 w-6" />
+            </Button>
+
+            {/* 文字装飾ボタン（プレビューボタンの左） */}
+            <Button
+              type="button"
+              className="fixed bottom-4 right-20 z-50 rounded-full w-12 h-12 p-0"
               onClick={() => setShowStylePanel(!showStylePanel)}
             >
               <Palette className="h-6 w-6" />
