@@ -46,7 +46,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Static file serving for uploads
+  // Static file serving for uploads (永続ストレージ)
   app.use('/uploads', express.static(uploadsDir));
   
   // Get user usage for current month
