@@ -593,6 +593,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // XML Sitemap endpoint
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const baseUrl = 'https://www.hikaku-map.com';
+      const currentDate = new Date().toISOString();
+      
+      // 静的ページのURL
+      const staticPages = [
+        { url: '/', priority: '1.0', changefreq: 'daily' },
+        { url: '/how-to', priority: '0.8', changefreq: 'monthly' },
+        { url: '/articles', priority: '0.9', changefreq: 'daily' },
+        { url: '/terms', priority: '0.3', changefreq: 'yearly' },
+        { url: '/privacy', priority: '0.3', changefreq: 'yearly' }
+      ];
+
+      // 記事データを取得
+      const articlesData = await storage.getAllArticles(1, 1000); // 全記事を取得
+      
+      let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+
+      // 静的ページを追加
+      staticPages.forEach(page => {
+        sitemapXml += `
+  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+      });
+
+      // 記事ページを追加
+      articlesData.articles.forEach(article => {
+        const articleDate = new Date(article.updatedAt).toISOString();
+        sitemapXml += `
+  <url>
+    <loc>${baseUrl}/articles/${article.id}</loc>
+    <lastmod>${articleDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      });
+
+      sitemapXml += `
+</urlset>`;
+
+      res.set('Content-Type', 'application/xml');
+      res.send(sitemapXml);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
