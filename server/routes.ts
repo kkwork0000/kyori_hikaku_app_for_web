@@ -50,6 +50,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Static file serving for uploads (永続ストレージ)
   app.use('/uploads', express.static(uploadsDir));
   
+  // ads.txtファイルの配信
+  app.get('/ads.txt', (req, res) => {
+    res.type('text/plain');
+    res.sendFile(path.join(process.cwd(), 'ads.txt'));
+  });
+  
   // Get user usage for current month
   app.get("/api/usage/:userId/:month", async (req, res) => {
     try {
