@@ -74,35 +74,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* アプリ概要説明 */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mt-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">距離比較アプリとは？</h2>
-        
-        <div className="prose prose-gray max-w-none text-gray-700 space-y-4">
-          <p>
-            <strong>距離比較アプリ</strong>は、出発地から複数の目的地への移動距離と所要時間を一括で比較できる、無料のWebアプリです。たとえば「今いる場所からAとB、どちらの観光地が近い？」「職場から候補の物件までどれくらいかかる？」といった日常のちょっとした悩みに対して、<strong>Googleマップを使った自動比較</strong>でスムーズに答えを出すことができます。
-          </p>
-
-          <p>
-            Googleマップでは1つのルートごとに検索する必要があり、<strong>複数地点の比較には時間と手間がかかります</strong>。しかし本アプリを使えば、出発地を1回入力するだけで複数の目的地に対しての所要時間や距離を同時にチェックでき、<strong>最も効率的な移動先をすぐに判断</strong>できます。
-          </p>
-
-          <p>
-            現在、対応している移動手段は<strong>車・徒歩・自転車</strong>となっており、目的地ごとにルートの選択や有料道路の有無などの詳細設定も可能です。※公共交通機関による比較機能は<strong>2025年6月時点では開発中</strong>です。
-          </p>
-
-          <p>
-            旅行の計画、物件探し、営業ルートの検討、学校や塾の候補選びなど、<strong>さまざまなシーンで活用可能</strong>です。操作はシンプルで、地図の入力補助や住所補完機能、距離の表形式表示、コピー機能なども充実しています。
-          </p>
-
-          <p>
-            「もっと早く知りたかった！」という声も多い距離比較アプリ。Googleマップでは実現できなかった距離と時間の同時比較を、ぜひご体験ください。
-          </p>
-        </div>
-      </div>
-
       {/* 使い方説明 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-xl shadow-sm p-6 mt-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">使い方</h2>
         
         <div className="space-y-6">
@@ -131,8 +104,33 @@ export default function HomePage() {
             <p className="text-gray-600 text-sm">「この場所に決定」ボタンを押すと、その場所をナビゲーション先としたGoogleマップが開きます。</p>
           </div>
         </div>
+      </div>
 
+      {/* アプリ概要説明 */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">距離比較アプリとは？</h2>
+        
+        <div className="prose prose-gray max-w-none text-gray-700 space-y-4">
+          <p>
+            <strong>距離比較アプリ</strong>は、出発地から複数の目的地への移動距離と所要時間を一括で比較できる、無料のWebアプリです。たとえば「今いる場所からAとB、どちらの観光地が近い？」「職場から候補の物件までどれくらいかかる？」といった日常のちょっとした悩みに対して、<strong>Googleマップを使った自動比較</strong>でスムーズに答えを出すことができます。
+          </p>
 
+          <p>
+            Googleマップでは1つのルートごとに検索する必要があり、<strong>複数地点の比較には時間と手間がかかります</strong>。しかし本アプリを使えば、出発地を1回入力するだけで複数の目的地に対しての所要時間や距離を同時にチェックでき、<strong>最も効率的な移動先をすぐに判断</strong>できます。
+          </p>
+
+          <p>
+            現在、対応している移動手段は<strong>車・徒歩・自転車</strong>となっており、目的地ごとにルートの選択や有料道路の有無などの詳細設定も可能です。※公共交通機関による比較機能は<strong>2025年6月時点では開発中</strong>です。
+          </p>
+
+          <p>
+            旅行の計画、物件探し、営業ルートの検討、学校や塾の候補選びなど、<strong>さまざまなシーンで活用可能</strong>です。操作はシンプルで、地図の入力補助や住所補完機能、距離の表形式表示、コピー機能なども充実しています。
+          </p>
+
+          <p>
+            「もっと早く知りたかった！」という声も多い距離比較アプリ。Googleマップでは実現できなかった距離と時間の同時比較を、ぜひご体験ください。
+          </p>
+        </div>
       </div>
     </div>
   );
