@@ -71,7 +71,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrls = [
         { loc: 'https://hikaku-map.com/', lastmod: '2025-06-07', changefreq: 'weekly', priority: '1.0' },
         { loc: 'https://hikaku-map.com/articles', lastmod: '2025-06-07', changefreq: 'daily', priority: '0.8' },
-        { loc: 'https://hikaku-map.com/how-to', lastmod: '2025-06-07', changefreq: 'monthly', priority: '0.7' },
         { loc: 'https://hikaku-map.com/privacy', lastmod: '2025-06-07', changefreq: 'yearly', priority: '0.3' },
         { loc: 'https://hikaku-map.com/terms', lastmod: '2025-06-07', changefreq: 'yearly', priority: '0.3' }
       ];

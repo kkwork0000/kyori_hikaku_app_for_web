@@ -11,7 +11,6 @@ export default function Navigation() {
 
   const menuItems = [
     { path: "/", label: "トップページ（距離比較）", icon: Home },
-    { path: "/how-to", label: "使い方", icon: HelpCircle },
     { path: "/articles", label: "紹介記事", icon: Newspaper },
     { path: "/terms", label: "利用規約", icon: FileText },
     { path: "/privacy", label: "プライバシーポリシー", icon: Shield },

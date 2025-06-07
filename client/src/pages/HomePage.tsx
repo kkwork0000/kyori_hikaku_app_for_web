@@ -73,6 +73,77 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* アプリ概要説明 */}
+      <div className="bg-white rounded-xl shadow-sm p-6 mt-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">距離比較アプリとは？</h2>
+        
+        <div className="prose prose-gray max-w-none text-gray-700 space-y-4">
+          <p>
+            <strong>距離比較アプリ</strong>は、出発地から複数の目的地への移動距離と所要時間を一括で比較できる、無料のWebアプリです。たとえば「今いる場所からAとB、どちらの観光地が近い？」「職場から候補の物件までどれくらいかかる？」といった日常のちょっとした悩みに対して、<strong>Googleマップを使った自動比較</strong>でスムーズに答えを出すことができます。
+          </p>
+
+          <p>
+            Googleマップでは1つのルートごとに検索する必要があり、<strong>複数地点の比較には時間と手間がかかります</strong>。しかし本アプリを使えば、出発地を1回入力するだけで複数の目的地に対しての所要時間や距離を同時にチェックでき、<strong>最も効率的な移動先をすぐに判断</strong>できます。
+          </p>
+
+          <p>
+            現在、対応している移動手段は<strong>車・徒歩・自転車</strong>となっており、目的地ごとにルートの選択や有料道路の有無などの詳細設定も可能です。※公共交通機関による比較機能は<strong>2025年6月時点では開発中</strong>です。
+          </p>
+
+          <p>
+            旅行の計画、物件探し、営業ルートの検討、学校や塾の候補選びなど、<strong>さまざまなシーンで活用可能</strong>です。操作はシンプルで、地図の入力補助や住所補完機能、距離の表形式表示、コピー機能なども充実しています。
+          </p>
+
+          <p>
+            「もっと早く知りたかった！」という声も多い距離比較アプリ。Googleマップでは実現できなかった距離と時間の同時比較を、ぜひご体験ください。
+          </p>
+        </div>
+      </div>
+
+      {/* 使い方説明 */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">使い方</h2>
+        
+        <div className="space-y-6">
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-2">1. 出発地を入力</h3>
+            <p className="text-gray-600 text-sm">まず、出発地となる場所を入力してください。住所、施設名、駅名などが利用できます。</p>
+          </div>
+
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-2">2. 目的地を追加</h3>
+            <p className="text-gray-600 text-sm">比較したい目的地を最大5箇所まで追加できます。「目的地を追加」ボタンで入力欄を増やせます。</p>
+          </div>
+
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-2">3. 移動手段を選択</h3>
+            <p className="text-gray-600 text-sm">車、徒歩、公共交通機関、自転車から移動手段を選択してください。</p>
+          </div>
+
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-2">4. 結果を比較</h3>
+            <p className="text-gray-600 text-sm">「距離と時間を比較」ボタンを押すと、各目的地への距離と所要時間が表示されます。</p>
+          </div>
+
+          <div className="border-l-4 border-blue-500 pl-4">
+            <h3 className="font-semibold text-gray-900 mb-2">5. 目的地を決定</h3>
+            <p className="text-gray-600 text-sm">「この場所に決定」ボタンを押すと、その場所をナビゲーション先としたGoogleマップが開きます。</p>
+          </div>
+        </div>
+
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            便利な機能
+          </h4>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• 比較結果をコピーしてスプレッドシートに貼り付けできます</li>
+            <li>• 月3回まで無料で利用できます</li>
+            <li>• 制限後は広告視聴で継続利用可能です</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
