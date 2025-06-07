@@ -2,6 +2,7 @@ import DistanceForm from "@/components/DistanceForm";
 import { getUserId, getCurrentMonth, getUserUsage } from "@/lib/userTracking";
 import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
+import { useEffect } from "react";
 
 export default function HomePage() {
   const userId = getUserId();
@@ -17,6 +18,41 @@ export default function HomePage() {
   });
 
   const remainingUses = Math.max(0, 3 - (usageData?.usageCount || 0));
+
+  // ホームページの構造化データを追加してSEOを改善
+  useEffect(() => {
+    // 既存の構造化データスクリプトを削除
+    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    // ホームページ用の構造化データを作成
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "距離比較アプリ",
+      "description": "出発地から複数の目的地までの距離と所要時間を一括で比較できる便利なツールです。車、徒歩、電車、自転車の移動手段に対応。Google マップを活用した正確な距離計算で効率的なルート選択をサポートします。",
+      "url": "https://hikaku-map.com/",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "距離比較アプリ"
+      }
+    };
+
+    // 構造化データスクリプトをheadに追加
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(structuredData);
+    document.head.appendChild(script);
+  }, []);
 
   return (
     <div className="space-y-6">

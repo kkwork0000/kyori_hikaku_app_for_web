@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Eye } from "lucide-react";
+import { useEffect } from "react";
 
 interface Article {
   id: number;
@@ -63,6 +64,67 @@ export default function ArticleDetailPage() {
   // 型安全性のための型アサーション
   const typedArticle = article as Article | undefined;
   const typedPopularArticles = popularArticles as Article[];
+
+  // 構造化データ（JSON-LD）を動的に追加してSEOを改善
+  useEffect(() => {
+    if (typedArticle) {
+      // 既存の構造化データスクリプトを削除
+      const existingScript = document.querySelector('script[type="application/ld+json"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      // 新しい構造化データを作成
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": typedArticle.title,
+        "description": typedArticle.content.substring(0, 155).replace(/<[^>]*>/g, ''),
+        "image": typedArticle.thumbnail ? [typedArticle.thumbnail] : undefined,
+        "datePublished": new Date(typedArticle.createdAt).toISOString(),
+        "dateModified": new Date(typedArticle.updatedAt || typedArticle.createdAt).toISOString(),
+        "author": {
+          "@type": "Organization",
+          "name": "距離比較アプリ"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "距離比較アプリ",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://hikaku-map.com/favicon.ico"
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": `https://hikaku-map.com/articles/${typedArticle.id}`
+        }
+      };
+
+      // 構造化データスクリプトをheadに追加
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(structuredData);
+      document.head.appendChild(script);
+
+      // ページタイトルとメタデータを更新
+      document.title = `${typedArticle.title} | 距離比較アプリ`;
+      
+      // メタディスクリプションを更新
+      let metaDescription = document.querySelector('meta[name="description"]');
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
+      }
+      metaDescription.setAttribute('content', typedArticle.content.substring(0, 155).replace(/<[^>]*>/g, '') + '...');
+    }
+
+    return () => {
+      // クリーンアップ時にページタイトルを元に戻す
+      document.title = '距離比較アプリ - 複数の目的地への距離・時間を一括比較';
+    };
+  }, [typedArticle]);
 
   if (isLoading) {
     return (

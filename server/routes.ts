@@ -78,12 +78,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 記事ページを動的に追加
       const { articles } = await storage.getAllArticles(1, 1000); // 全記事を取得
-      const articleUrls = articles.map(article => ({
-        loc: `https://hikaku-map.com/articles/${article.id}`,
-        lastmod: new Date(article.updatedAt).toISOString().split('T')[0],
-        changefreq: 'monthly',
-        priority: '0.6'
-      }));
+      const articleUrls = articles.map(article => {
+        // updatedAtまたはcreatedAtの文字列を使用、どちらもない場合はデフォルト日付
+        const dateString = (article.updatedAt || article.createdAt || '2025-06-07T00:00:00.000Z').toString();
+        const lastmod = new Date(dateString).toISOString().split('T')[0];
+        return {
+          loc: `https://hikaku-map.com/articles/${article.id}`,
+          lastmod,
+          changefreq: 'monthly',
+          priority: '0.6'
+        };
+      });
       
       const allUrls = [...baseUrls, ...articleUrls];
       
