@@ -528,10 +528,10 @@ export default function AdminPage() {
                   <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm text-yellow-800">
-                      <strong>テストモード:</strong> 指定ユーザーの利用制限を除外します（広告表示テスト用）
+                      <strong>テストモード:</strong> 指定ユーザーの利用制限から除外します（広告表示なし）
                     </p>
                     <p className="text-sm text-yellow-800">
-                      <strong>本番モード:</strong> 指定ユーザーにも利用制限を適用します（通常運用）
+                      <strong>本番モード:</strong> 指定ユーザーにも利用制限を適用します（広告表示あり）
                     </p>
                   </div>
                 </div>

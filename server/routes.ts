@@ -780,12 +780,14 @@ ${allUrls.map(url => `  <url>
       const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
       
       const content = fs.readFileSync(userTrackingPath, 'utf8');
-      const isTestMode = content.includes("// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing");
+      // テストモード = ユーザーIDがアクティブ（利用制限除外、広告なし）
+      // 本番モード = ユーザーIDがコメントアウト（利用制限適用、広告あり）
+      const isTestMode = content.includes("'user_1747983273983_rsdgkwozg', // Admin test user");
       
       res.json({ 
         isTestMode,
         targetUserId: 'user_1747983273983_rsdgkwozg',
-        status: isTestMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）'
+        status: isTestMode ? 'テストモード（利用制限から除外）' : '本番モード（利用制限を適用）'
       });
     } catch (error) {
       res.status(500).json({ message: "Error getting test mode status" });
@@ -800,23 +802,25 @@ ${allUrls.map(url => `  <url>
       let content = fs.readFileSync(userTrackingPath, 'utf8');
       console.log('Current file content:', content.substring(content.indexOf('TEST_USER_IDS'), content.indexOf('TEST_USER_IDS') + 200));
       
-      const isCurrentlyTestMode = content.includes("// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing");
+      // テストモード = ユーザーIDがアクティブ（利用制限除外、広告なし）
+      // 本番モード = ユーザーIDがコメントアウト（利用制限適用、広告あり）
+      const isCurrentlyTestMode = content.includes("'user_1747983273983_rsdgkwozg', // Admin test user");
       console.log('Currently in test mode:', isCurrentlyTestMode);
       
       if (isCurrentlyTestMode) {
-        // Switch to production mode (apply limits) - uncomment the user ID
-        const beforeReplace = content;
-        content = content.replace(
-          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing",
-          "  'user_1747983273983_rsdgkwozg', // Admin test user"
-        );
-        console.log('Replacement attempted (test->prod):', beforeReplace !== content);
-      } else {
-        // Switch to test mode (exclude from limits) - comment out the user ID
+        // Switch to production mode (apply limits, show ads) - comment out the user ID
         const beforeReplace = content;
         content = content.replace(
           "  'user_1747983273983_rsdgkwozg', // Admin test user",
           "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing"
+        );
+        console.log('Replacement attempted (test->prod):', beforeReplace !== content);
+      } else {
+        // Switch to test mode (exclude from limits, no ads) - uncomment the user ID
+        const beforeReplace = content;
+        content = content.replace(
+          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing",
+          "  'user_1747983273983_rsdgkwozg', // Admin test user"
         );
         console.log('Replacement attempted (prod->test):', beforeReplace !== content);
       }
@@ -826,13 +830,13 @@ ${allUrls.map(url => `  <url>
       
       // Re-read to verify the change
       const verifyContent = fs.readFileSync(userTrackingPath, 'utf8');
-      const newMode = !verifyContent.includes("'user_1747983273983_rsdgkwozg'");
+      const newMode = verifyContent.includes("'user_1747983273983_rsdgkwozg', // Admin test user");
       console.log('Verified new mode (test mode):', newMode);
       
       res.json({ 
         success: true,
         isTestMode: newMode,
-        status: newMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）',
+        status: newMode ? 'テストモード（利用制限から除外）' : '本番モード（利用制限を適用）',
         message: newMode ? 'テストモードに切り替えました' : '本番モードに切り替えました'
       });
     } catch (error) {
