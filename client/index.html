@@ -25,7 +25,57 @@
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- Zucks Ad Network Footer Advertisement -->
+    <div id="footer-ad-container" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); background: white; border-top: 1px solid #e5e7eb; padding: 8px; width: 100%; max-width: 448px; z-index: 1000;">
+      <div style="background: white; border-radius: 8px; padding: 4px; text-align: center; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+        <script type="text/javascript" src="https://j.zucks.net.zimg.jp/j?f=693842"></script>
+      </div>
+    </div>
+    
+    <!-- CSS for responsive layout -->
+    <style>
+      @media (min-width: 768px) {
+        #footer-ad-container {
+          max-width: 1024px;
+        }
+      }
+      
+      /* Adjust main content padding when on admin page */
+      body[data-admin-page="true"] #root main {
+        padding-bottom: 1rem !important;
+      }
+    </style>
+    
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Script to hide footer ad on admin page -->
+    <script type="text/javascript">
+      function checkAdminPage() {
+        const footerAd = document.getElementById('footer-ad-container');
+        const isAdminPage = window.location.pathname === '/admin';
+        
+        if (footerAd) {
+          footerAd.style.display = isAdminPage ? 'none' : 'block';
+        }
+        
+        // Update body data attribute for CSS targeting
+        document.body.setAttribute('data-admin-page', isAdminPage);
+      }
+      
+      // Check on page load
+      document.addEventListener('DOMContentLoaded', checkAdminPage);
+      
+      // Check on route changes (for SPA)
+      let currentPath = window.location.pathname;
+      setInterval(() => {
+        if (window.location.pathname !== currentPath) {
+          currentPath = window.location.pathname;
+          checkAdminPage();
+        }
+      }, 100);
+    </script>
+    
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
 

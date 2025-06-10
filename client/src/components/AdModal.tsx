@@ -18,35 +18,6 @@ export default function AdModal({ isOpen, onClose, onComplete }: AdModalProps) {
     if (isOpen) {
       setCountdown(30);
       setIsCountdownActive(true);
-      
-      // Zucks Ad Network広告の読み込み
-      const existingScript = document.querySelector('script[src*="f=693608"]:not([data-from-html])');
-      if (existingScript) {
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://j.zucks.net.zimg.jp/j?f=693608';
-      script.async = true;
-      
-      script.onload = () => {
-        console.log('Modal Zucks Ad Network script loaded');
-      };
-      
-      script.onerror = () => {
-        console.warn('Modal Zucks Ad Network script failed to load');
-      };
-      
-      // bodyに追加（index.htmlと同じ場所）
-      document.body.appendChild(script);
-
-      return () => {
-        // クリーンアップ
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      };
     }
   }, [isOpen]);
 
@@ -81,13 +52,15 @@ export default function AdModal({ isOpen, onClose, onComplete }: AdModalProps) {
             継続して利用するには、以下の広告を視聴してください。
           </p>
           
-          {/* Zucks Ad Network広告表示エリア */}
+          {/* 利用制限適用時の広告表示エリア */}
           <div 
             ref={adContainerRef}
             className="bg-white border border-gray-200 rounded-lg p-4 mb-4 min-h-[200px] flex items-center justify-center"
             id="zucks-ad-container"
+            dangerouslySetInnerHTML={{
+              __html: '<script type="text/javascript" src="https://j.zucks.net.zimg.jp/j?f=693608"></script>'
+            }}
           >
-            {/* Zucks Ad Network広告がここに動的に挿入されます */}
           </div>
           
           {/* カウントダウン表示 */}
