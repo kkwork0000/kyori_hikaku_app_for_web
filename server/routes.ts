@@ -801,23 +801,32 @@ ${allUrls.map(url => `  <url>
       
       let content = fs.readFileSync(userTrackingPath, 'utf8');
       
-      const isCurrentlyTestMode = content.includes("'user_1747983273983_rsdgkwozg',");
+      console.log('Current file content (lines 44-50):');
+      const lines = content.split('\n');
+      console.log(lines.slice(43, 50).map((line, i) => `${44 + i}: ${line}`).join('\n'));
       
+      const isCurrentlyTestMode = content.includes("'user_1747983273983_rsdgkwozg',");
+      console.log('Current mode detection:', isCurrentlyTestMode ? 'Test Mode' : 'Production Mode');
+      
+      let newContent = content;
       if (isCurrentlyTestMode) {
-        // Switch to production mode (apply limits)
-        content = content.replace(
-          "  'user_1747983273983_rsdgkwozg', // Admin test user",
-          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing"
-        );
+        // Switch to production mode (apply limits) - comment out the user ID
+        const oldPattern = "'user_1747983273983_rsdgkwozg', // Admin test user";
+        const newPattern = "// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing";
+        newContent = content.replace(oldPattern, newPattern);
+        console.log('Switching to production mode');
+        console.log('Pattern found:', content.includes(oldPattern));
       } else {
-        // Switch to test mode (exclude from limits)
-        content = content.replace(
-          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing",
-          "  'user_1747983273983_rsdgkwozg', // Admin test user"
-        );
+        // Switch to test mode (exclude from limits) - activate the user ID
+        const oldPattern = "// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing";
+        const newPattern = "'user_1747983273983_rsdgkwozg', // Admin test user";
+        newContent = content.replace(oldPattern, newPattern);
+        console.log('Switching to test mode');
+        console.log('Pattern found:', content.includes(oldPattern));
       }
       
-      fs.writeFileSync(userTrackingPath, content, 'utf8');
+      fs.writeFileSync(userTrackingPath, newContent, 'utf8');
+      console.log('File updated successfully');
       
       const newMode = !isCurrentlyTestMode;
       

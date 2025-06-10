@@ -43,7 +43,7 @@ export function updateUserUsage(userId: string, month: string): void {
 
 // Test user IDs that bypass usage limits
 const TEST_USER_IDS = [
-  'user_1747983273983_rsdgkwozg', // Admin test user
+  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing
   'admin_user',
   'test_user'
 ];
