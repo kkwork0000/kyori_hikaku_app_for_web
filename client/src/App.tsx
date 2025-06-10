@@ -33,6 +33,8 @@ function App() {
 
 
 
+
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -46,15 +48,15 @@ function App() {
           {!isAdminPage && (
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 max-w-md md:max-w-4xl mx-auto">
               <div className="bg-white rounded-lg p-1 text-center min-h-[80px] flex items-center justify-center">
-                <iframe 
-                  src="https://j.zucks.net.zimg.jp/j?f=693842"
-                  width="100%"
-                  height="80"
-                  frameBorder="0"
-                  scrolling="no"
-                  style={{ border: 'none', backgroundColor: 'transparent' }}
-                  title="Zucks Ad Network Advertisement"
-                />
+                <div 
+                  id="zucks-footer-ad"
+                  className="w-full h-full"
+                  style={{ minHeight: '80px' }}
+                  dangerouslySetInnerHTML={{
+                    __html: '<script type="text/javascript" src="https://j.zucks.net.zimg.jp/j?f=693842"></script>'
+                  }}
+                >
+                </div>
               </div>
             </div>
           )}
