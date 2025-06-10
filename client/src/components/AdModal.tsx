@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
@@ -12,11 +12,36 @@ interface AdModalProps {
 export default function AdModal({ isOpen, onClose, onComplete }: AdModalProps) {
   const [countdown, setCountdown] = useState(30);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
+  const adContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setCountdown(30);
       setIsCountdownActive(true);
+      
+      // Zucks Ad Network広告の読み込み
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = 'https://j.zucks.net.zimg.jp/j?f=693608';
+      script.async = true;
+      
+      // スクリプトが読み込まれた後の処理
+      script.onload = () => {
+        console.log('Zucks Ad Network script loaded');
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load Zucks Ad Network script');
+      };
+      
+      document.head.appendChild(script);
+      
+      // クリーンアップ: モーダルが閉じられた時にスクリプトを削除
+      return () => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+      };
     }
   }, [isOpen]);
 
@@ -51,13 +76,24 @@ export default function AdModal({ isOpen, onClose, onComplete }: AdModalProps) {
             継続して利用するには、以下の広告を視聴してください。
           </p>
           
-          {/* Video Ad Placeholder */}
-          <div className="bg-gray-200 rounded-lg p-8 mb-4 text-center">
-            <Play className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <div className="text-gray-500 text-sm">動画広告 (30秒)</div>
-            <div className="text-primary font-semibold text-2xl mt-2">
-              {countdown}
-            </div>
+          {/* Zucks Ad Network広告表示エリア */}
+          <div 
+            ref={adContainerRef}
+            className="bg-white border border-gray-200 rounded-lg p-4 mb-4 min-h-[200px] flex items-center justify-center"
+            id="zucks-ad-container"
+          >
+            {isCountdownActive ? (
+              <div className="space-y-2 text-gray-500">
+                <Play className="h-8 w-8 mx-auto text-primary" />
+                <p className="text-sm">広告表示中...</p>
+                <p className="text-xs">残り {countdown}秒</p>
+              </div>
+            ) : (
+              <div className="space-y-2 text-gray-500">
+                <p className="text-sm font-medium">広告視聴完了</p>
+                <p className="text-xs text-green-600">継続利用が可能になりました</p>
+              </div>
+            )}
           </div>
           
           <Button
