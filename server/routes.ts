@@ -787,7 +787,7 @@ ${allUrls.map(url => `  <url>
       res.json({ 
         isTestMode,
         targetUserId: 'user_1747983273983_rsdgkwozg',
-        status: isTestMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）'
+        status: isTestMode ? 'テストモード（対象ユーザーを利用制限から除外）' : '本番モード（対象ユーザーの利用制限除外を適用しない）'
       });
     } catch (error) {
       res.status(500).json({ message: "Error getting test mode status" });
@@ -824,8 +824,8 @@ ${allUrls.map(url => `  <url>
       res.json({ 
         success: true,
         isTestMode: newMode,
-        status: newMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）',
-        message: newMode ? 'テストモードに切り替えました' : '本番モードに切り替えました'
+        status: newMode ? 'テストモード（対象ユーザーを利用制限から除外）' : '本番モード（対象ユーザーの利用制限除外を適用しない）',
+        message: newMode ? 'テストモードに切り替えました（対象ユーザーを利用制限から除外）' : '本番モードに切り替えました（対象ユーザーの利用制限除外を適用しない）'
       });
     } catch (error) {
       console.error('Toggle test mode error:', error);
