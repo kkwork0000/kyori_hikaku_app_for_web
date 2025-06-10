@@ -503,6 +503,44 @@ ${allUrls.map(url => `  <url>
     }
   });
 
+  // Data cleanup endpoints (admin only)
+  app.get('/api/admin/cleanup/stats', async (req, res) => {
+    try {
+      const stats = await storage.getOldDataStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error getting cleanup stats:', error);
+      res.status(500).json({ error: 'Failed to get cleanup stats' });
+    }
+  });
+
+  app.post('/api/admin/cleanup/execute', async (req, res) => {
+    try {
+      const { cleanupScheduler } = await import('./cleanup-scheduler');
+      const result = await cleanupScheduler.manualCleanup();
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error executing cleanup:', error);
+      res.status(500).json({ error: 'Failed to execute cleanup' });
+    }
+  });
+
+  app.get('/api/admin/cleanup/status', async (req, res) => {
+    try {
+      const { cleanupScheduler } = await import('./cleanup-scheduler');
+      const status = cleanupScheduler.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Error getting cleanup status:', error);
+      res.status(500).json({ error: 'Failed to get cleanup status' });
+    }
+  });
+
   // Admin statistics
   app.get("/api/admin/stats", async (req, res) => {
     try {
