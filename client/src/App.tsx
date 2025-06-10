@@ -31,6 +31,41 @@ function App() {
   const [location] = useLocation();
   const isAdminPage = location === '/admin';
 
+  // Zucks Ad Network フッター広告の読み込み
+  useEffect(() => {
+    if (!isAdminPage) {
+      // 既存のスクリプトをチェック
+      const existingScript = document.querySelector('script[src*="f=693842"]:not([data-from-html])');
+      if (existingScript) {
+        return;
+      }
+
+      // 新しいスクリプト要素を作成
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = 'https://j.zucks.net.zimg.jp/j?f=693842';
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('Footer Zucks Ad Network script loaded');
+      };
+      
+      script.onerror = () => {
+        console.warn('Footer Zucks Ad Network script failed to load');
+      };
+      
+      // bodyに追加（index.htmlと同じ場所）
+      document.body.appendChild(script);
+
+      return () => {
+        // クリーンアップ
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    }
+  }, [isAdminPage]);
+
 
 
 
@@ -52,10 +87,8 @@ function App() {
                   id="zucks-footer-ad"
                   className="w-full h-full"
                   style={{ minHeight: '80px' }}
-                  dangerouslySetInnerHTML={{
-                    __html: '<script type="text/javascript" src="https://j.zucks.net.zimg.jp/j?f=693842"></script>'
-                  }}
                 >
+                  {/* Zucks Ad Network広告がここに動的に挿入されます */}
                 </div>
               </div>
             </div>
