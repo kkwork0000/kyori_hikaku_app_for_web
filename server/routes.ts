@@ -780,7 +780,7 @@ ${allUrls.map(url => `  <url>
       const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
       
       const content = fs.readFileSync(userTrackingPath, 'utf8');
-      const isTestMode = !content.includes("'user_1747983273983_rsdgkwozg'");
+      const isTestMode = content.includes("// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing");
       
       res.json({ 
         isTestMode,
@@ -800,7 +800,7 @@ ${allUrls.map(url => `  <url>
       let content = fs.readFileSync(userTrackingPath, 'utf8');
       console.log('Current file content:', content.substring(content.indexOf('TEST_USER_IDS'), content.indexOf('TEST_USER_IDS') + 200));
       
-      const isCurrentlyTestMode = !content.includes("'user_1747983273983_rsdgkwozg'");
+      const isCurrentlyTestMode = content.includes("// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing");
       console.log('Currently in test mode:', isCurrentlyTestMode);
       
       if (isCurrentlyTestMode) {
