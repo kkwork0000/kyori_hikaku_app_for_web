@@ -26,6 +26,7 @@ import {
   getUserId,
   getCurrentMonth,
   updateUserUsage,
+  isTestUser,
 } from "@/lib/userTracking";
 
 type TravelMode = "driving" | "walking" | "transit" | "bicycling";
@@ -134,34 +135,29 @@ export default function DistanceForm() {
       return response.json();
     },
     onSuccess: (data) => {
-      // 【開発モード中】月間利用回数制限を一時的に無効化（公開時にコメントアウトを解除）
-      /*
-      if (data.usageCount >= 3) {
+      if (data.usageCount >= 3 && !isTestUser(userId)) {
         setShowAdModal(true);
       } else {
-      */
-      // Proceed with calculation
-      if (pendingCalculation) {
-        console.log("Sending calculation with settings:", pendingCalculation);
+        // Proceed with calculation
+        if (pendingCalculation) {
+          console.log("Sending calculation with settings:", pendingCalculation);
 
-        // pendingCalculation内のrouteSettingsが適切にあるか確認
-        if (pendingCalculation.routeSettings) {
-          console.log(
-            "Route settings being sent:",
-            pendingCalculation.routeSettings,
-          );
+          // pendingCalculation内のrouteSettingsが適切にあるか確認
+          if (pendingCalculation.routeSettings) {
+            console.log(
+              "Route settings being sent:",
+              pendingCalculation.routeSettings,
+            );
+          }
+
+          calculateMutation.mutate({
+            ...pendingCalculation,
+            travelMode,
+            userId,
+          });
+          setPendingCalculation(null);
         }
-
-        calculateMutation.mutate({
-          ...pendingCalculation,
-          travelMode,
-          userId,
-        });
-        setPendingCalculation(null);
       }
-      /*
-      }
-      */
     },
   });
 

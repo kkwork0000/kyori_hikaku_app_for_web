@@ -1,5 +1,5 @@
 import DistanceForm from "@/components/DistanceForm";
-import { getUserId, getCurrentMonth, getUserUsage } from "@/lib/userTracking";
+import { getUserId, getCurrentMonth, getUserUsage, isTestUser } from "@/lib/userTracking";
 import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { useEffect } from "react";
@@ -18,6 +18,7 @@ export default function HomePage() {
   });
 
   const remainingUses = Math.max(0, 3 - (usageData?.usageCount || 0));
+  const isUserTestAccount = isTestUser(userId);
 
   // ホームページの構造化データを追加してSEOを改善
   useEffect(() => {
@@ -65,10 +66,8 @@ export default function HomePage() {
           <div>
             <h4 className="font-medium text-yellow-800 mb-1">利用制限について</h4>
             <p className="text-sm text-yellow-700">
-              {/* 【開発モード中】月間利用回数制限を一時的に無効化（公開時にコメントアウトを解除） */}
-              <span className="font-semibold">開発モード: 利用制限は一時的に無効化されています</span><br />
-              {/* 今月の残り利用回数: <span className="font-semibold">{remainingUses}回</span><br /> */}
-              通常は制限に達した場合、広告視聴で継続利用できます。
+              今月の残り利用回数: <span className="font-semibold">{remainingUses}回</span><br />
+              制限に達した場合、広告視聴で継続利用できます。
             </p>
           </div>
         </div>

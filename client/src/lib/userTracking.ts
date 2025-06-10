@@ -41,7 +41,22 @@ export function updateUserUsage(userId: string, month: string): void {
   }).catch(console.error);
 }
 
+// Test user IDs that bypass usage limits
+const TEST_USER_IDS = [
+  'user_1747983273983_rsdgkwozg', // Your existing test user ID
+  'admin_user',
+  'test_user'
+];
+
+// Check if user is a test user (bypasses limits)
+export function isTestUser(userId: string): boolean {
+  return TEST_USER_IDS.includes(userId);
+}
+
 // Check if user has exceeded monthly limit
 export function hasExceededLimit(userId: string, month: string): boolean {
+  if (isTestUser(userId)) {
+    return false; // Test users bypass limits
+  }
   return getUserUsage(userId, month) >= 3;
 }
