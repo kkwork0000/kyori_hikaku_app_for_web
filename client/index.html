@@ -34,20 +34,19 @@
     </div>
 
     <!-- Zucks Ad Network Modal Advertisement (Hidden by default) -->
-    <div id="modal-ad-container" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; z-index: 2000; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); position: relative;">
-      <!-- Close button (×) in top right corner -->
-      <button id="modal-ad-close-btn" style="position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; background: #f3f4f6; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #6b7280; transition: background-color 0.2s;">
-        ×
-      </button>
-      
+    <div id="modal-ad-container" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; z-index: 2000; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
       <div style="text-align: center; margin-bottom: 16px;">
         <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #374151;">月間利用制限に達しました</h3>
         <p style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">継続して利用するには、以下の広告を視聴してください。</p>
       </div>
       
-      <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; min-height: 250px; display: flex; align-items: center; justify-content: center;">
+      <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; min-height: 250px; display: flex; align-items: center; justify-content: center;">
         <script type="text/javascript" src="https://j.zucks.net.zimg.jp/j?f=693608"></script>
       </div>
+      
+      <button id="modal-ad-close-btn" style="width: 100%; background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 12px; font-size: 16px; font-weight: 500; cursor: pointer;">
+        継続利用
+      </button>
     </div>
 
     <!-- Modal backdrop -->
@@ -64,11 +63,6 @@
       /* Adjust main content padding when on admin page */
       body[data-admin-page="true"] #root main {
         padding-bottom: 1rem !important;
-      }
-      
-      /* Close button hover effect */
-      #modal-ad-close-btn:hover {
-        background-color: #e5e7eb !important;
       }
     </style>
     
