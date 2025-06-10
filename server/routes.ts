@@ -777,8 +777,6 @@ ${allUrls.map(url => `  <url>
   // Admin: Get test mode status
   app.get("/api/admin/test-mode", async (req, res) => {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
       
       const content = fs.readFileSync(userTrackingPath, 'utf8');
@@ -797,8 +795,6 @@ ${allUrls.map(url => `  <url>
   // Admin: Toggle test mode
   app.post("/api/admin/toggle-test-mode", async (req, res) => {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
       
       let content = fs.readFileSync(userTrackingPath, 'utf8');
