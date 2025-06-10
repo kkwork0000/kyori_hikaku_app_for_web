@@ -70,6 +70,16 @@ export default function AdminPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
+  const { data: testModeData, refetch: refetchTestMode } = useQuery({
+    queryKey: ["/api/admin/test-mode"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/test-mode");
+      if (!response.ok) throw new Error("Failed to fetch test mode status");
+      return response.json();
+    },
+    enabled: isLoggedIn,
+  });
+
   // フィルタリングとソートされた記事データ
   const filteredAndSortedArticles = articlesData?.articles
     ? articlesData.articles
@@ -194,6 +204,30 @@ export default function AdminPage() {
       toast({
         title: "エラー",
         description: "データクリーンアップに失敗しました。",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleTestModeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/admin/toggle-test-mode", {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error("Failed to toggle test mode");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "モード切り替え完了",
+        description: data.message,
+      });
+      refetchTestMode();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "エラーが発生しました",
+        description: error.message || "モードの切り替えに失敗しました。",
         variant: "destructive",
       });
     },
@@ -467,6 +501,51 @@ export default function AdminPage() {
                     "クリーンアップ実行中..."
                   ) : (
                     `古いデータを削除 (${(cleanupStats?.oldUserUsageCount || 0) + (cleanupStats?.oldDistanceQueryCount || 0)}件)`
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Test Mode Toggle */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="font-medium text-gray-900 mb-4">利用制限モード設定</h4>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-blue-900">対象ユーザー</div>
+                    <div className="text-sm text-blue-700 font-mono">
+                      {testModeData?.targetUserId || 'user_1747983273983_rsdgkwozg'}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-medium ${testModeData?.isTestMode ? 'text-green-600' : 'text-orange-600'}`}>
+                      {testModeData?.status || 'ステータス取得中...'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-yellow-800">
+                      <strong>テストモード:</strong> 指定ユーザーの利用制限を除外します（広告表示テスト用）
+                    </p>
+                    <p className="text-sm text-yellow-800">
+                      <strong>本番モード:</strong> 指定ユーザーにも利用制限を適用します（通常運用）
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => toggleTestModeMutation.mutate()}
+                  disabled={toggleTestModeMutation.isPending}
+                  variant={testModeData?.isTestMode ? "default" : "secondary"}
+                  className="w-full"
+                >
+                  {toggleTestModeMutation.isPending ? (
+                    "モード切り替え中..."
+                  ) : (
+                    testModeData?.isTestMode ? "本番モードに切り替え" : "テストモードに切り替え"
                   )}
                 </Button>
               </div>

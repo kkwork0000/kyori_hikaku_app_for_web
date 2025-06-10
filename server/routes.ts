@@ -774,6 +774,67 @@ ${allUrls.map(url => `  <url>
     }
   });
 
+  // Admin: Get test mode status
+  app.get("/api/admin/test-mode", async (req, res) => {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
+      
+      const content = fs.readFileSync(userTrackingPath, 'utf8');
+      const isTestMode = !content.includes("'user_1747983273983_rsdgkwozg'");
+      
+      res.json({ 
+        isTestMode,
+        targetUserId: 'user_1747983273983_rsdgkwozg',
+        status: isTestMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）'
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error getting test mode status" });
+    }
+  });
+
+  // Admin: Toggle test mode
+  app.post("/api/admin/toggle-test-mode", async (req, res) => {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
+      
+      let content = fs.readFileSync(userTrackingPath, 'utf8');
+      
+      const isCurrentlyTestMode = !content.includes("'user_1747983273983_rsdgkwozg'");
+      
+      if (isCurrentlyTestMode) {
+        // Switch to production mode (apply limits)
+        content = content.replace(
+          /\/\/ 'user_1747983273983_rsdgkwozg', \/\/ Temporarily removed for ad testing/,
+          "'user_1747983273983_rsdgkwozg', // Admin test user"
+        );
+      } else {
+        // Switch to test mode (exclude from limits)
+        content = content.replace(
+          /'user_1747983273983_rsdgkwozg', \/\/ Admin test user/,
+          "// 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing"
+        );
+      }
+      
+      fs.writeFileSync(userTrackingPath, content, 'utf8');
+      
+      const newMode = !isCurrentlyTestMode;
+      
+      res.json({ 
+        success: true,
+        isTestMode: newMode,
+        status: newMode ? 'テストモード（利用制限除外）' : '本番モード（利用制限適用）',
+        message: newMode ? 'テストモードに切り替えました' : '本番モードに切り替えました'
+      });
+    } catch (error) {
+      console.error('Toggle test mode error:', error);
+      res.status(500).json({ message: "Error toggling test mode" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
