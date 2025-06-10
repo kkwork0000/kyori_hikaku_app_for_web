@@ -780,14 +780,14 @@ ${allUrls.map(url => `  <url>
       const userTrackingPath = path.join(process.cwd(), 'client/src/lib/userTracking.ts');
       
       const content = fs.readFileSync(userTrackingPath, 'utf8');
-      // テストモード = ユーザーIDがコメントアウトされている状態（利用制限除外）
-      // 本番モード = ユーザーIDがアクティブな状態（利用制限適用）
-      const isTestMode = content.includes("// 'user_1747983273983_rsdgkwozg'");
+      // テストモード = ユーザーIDがアクティブな状態（利用制限除外）
+      // 本番モード = ユーザーIDがコメントアウトされている状態（利用制限適用）
+      const isTestMode = content.includes("'user_1747983273983_rsdgkwozg',");
       
       res.json({ 
         isTestMode,
         targetUserId: 'user_1747983273983_rsdgkwozg',
-        status: isTestMode ? 'テストモード（対象ユーザーを利用制限から除外）' : '本番モード（対象ユーザーの利用制限除外を適用しない）'
+        status: isTestMode ? 'テストモード（利用制限から除外）' : '本番モード（利用制限を適用）'
       });
     } catch (error) {
       res.status(500).json({ message: "Error getting test mode status" });
@@ -801,19 +801,19 @@ ${allUrls.map(url => `  <url>
       
       let content = fs.readFileSync(userTrackingPath, 'utf8');
       
-      const isCurrentlyTestMode = content.includes("// 'user_1747983273983_rsdgkwozg'");
+      const isCurrentlyTestMode = content.includes("'user_1747983273983_rsdgkwozg',");
       
       if (isCurrentlyTestMode) {
         // Switch to production mode (apply limits)
         content = content.replace(
-          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing",
-          "  'user_1747983273983_rsdgkwozg', // Admin test user"
+          "  'user_1747983273983_rsdgkwozg', // Admin test user",
+          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing"
         );
       } else {
         // Switch to test mode (exclude from limits)
         content = content.replace(
-          "  'user_1747983273983_rsdgkwozg', // Admin test user",
-          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing"
+          "  // 'user_1747983273983_rsdgkwozg', // Temporarily removed for ad testing",
+          "  'user_1747983273983_rsdgkwozg', // Admin test user"
         );
       }
       
@@ -824,8 +824,8 @@ ${allUrls.map(url => `  <url>
       res.json({ 
         success: true,
         isTestMode: newMode,
-        status: newMode ? 'テストモード（対象ユーザーを利用制限から除外）' : '本番モード（対象ユーザーの利用制限除外を適用しない）',
-        message: newMode ? 'テストモードに切り替えました（対象ユーザーを利用制限から除外）' : '本番モードに切り替えました（対象ユーザーの利用制限除外を適用しない）'
+        status: newMode ? 'テストモード（利用制限から除外）' : '本番モード（利用制限を適用）',
+        message: newMode ? 'テストモードに切り替えました（利用制限から除外）' : '本番モードに切り替えました（利用制限を適用）'
       });
     } catch (error) {
       console.error('Toggle test mode error:', error);
