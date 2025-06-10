@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -14,7 +14,12 @@ export const userUsage = pgTable("user_usage", {
   month: text("month").notNull(), // Format: "MM_YYYY"
   usageCount: integer("usage_count").notNull().default(0),
   lastUsed: timestamp("last_used").defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("user_usage_user_id_idx").on(table.userId),
+  monthIdx: index("user_usage_month_idx").on(table.month),
+  userMonthIdx: index("user_usage_user_month_idx").on(table.userId, table.month),
+  lastUsedIdx: index("user_usage_last_used_idx").on(table.lastUsed),
+}));
 
 export const distanceQuery = pgTable("distance_query", {
   id: serial("id").primaryKey(),
@@ -24,7 +29,10 @@ export const distanceQuery = pgTable("distance_query", {
   travelMode: text("travel_mode").notNull(),
   results: text("results"), // JSON string of results
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("distance_query_user_id_idx").on(table.userId),
+  createdAtIdx: index("distance_query_created_at_idx").on(table.createdAt),
+}));
 
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),

@@ -25,6 +25,16 @@ export interface IStorage {
   deleteArticle(id: number): Promise<boolean>;
   updateArticleViews(id: number): Promise<void>;
   getPopularArticles(limit?: number): Promise<Article[]>;
+
+  // Data cleanup operations
+  cleanupOldUserUsage(): Promise<{ deletedCount: number }>;
+  cleanupOldDistanceQueries(): Promise<{ deletedCount: number }>;
+  getOldDataStats(): Promise<{
+    oldUserUsageCount: number;
+    oldDistanceQueryCount: number;
+    totalUserUsageCount: number;
+    totalDistanceQueryCount: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -110,6 +120,63 @@ export class DatabaseStorage implements IStorage {
       .from(userUsage)
       .where(eq(userUsage.month, month));
     return result[0]?.count || 0;
+  }
+
+  // Data cleanup operations
+  async cleanupOldUserUsage(): Promise<{ deletedCount: number }> {
+    // Calculate cutoff date (3 months ago)
+    const now = new Date();
+    const cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    
+    // Delete records older than 3 months
+    const result = await db
+      .delete(userUsage)
+      .where(sql`${userUsage.lastUsed} < ${cutoffDate}`)
+      .returning({ id: userUsage.id });
+    
+    return { deletedCount: result.length };
+  }
+
+  async cleanupOldDistanceQueries(): Promise<{ deletedCount: number }> {
+    // Calculate cutoff date (3 months ago)
+    const now = new Date();
+    const cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    
+    // Delete records older than 3 months
+    const result = await db
+      .delete(distanceQuery)
+      .where(sql`${distanceQuery.createdAt} < ${cutoffDate}`)
+      .returning({ id: distanceQuery.id });
+    
+    return { deletedCount: result.length };
+  }
+
+  async getOldDataStats(): Promise<{
+    oldUserUsageCount: number;
+    oldDistanceQueryCount: number;
+    totalUserUsageCount: number;
+    totalDistanceQueryCount: number;
+  }> {
+    const now = new Date();
+    const cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+
+    const [oldUserUsage, oldDistanceQuery, totalUserUsage, totalDistanceQuery] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` })
+        .from(userUsage)
+        .where(sql`${userUsage.lastUsed} < ${cutoffDate}`),
+      db.select({ count: sql<number>`count(*)` })
+        .from(distanceQuery)
+        .where(sql`${distanceQuery.createdAt} < ${cutoffDate}`),
+      db.select({ count: sql<number>`count(*)` }).from(userUsage),
+      db.select({ count: sql<number>`count(*)` }).from(distanceQuery)
+    ]);
+
+    return {
+      oldUserUsageCount: oldUserUsage[0]?.count || 0,
+      oldDistanceQueryCount: oldDistanceQuery[0]?.count || 0,
+      totalUserUsageCount: totalUserUsage[0]?.count || 0,
+      totalDistanceQueryCount: totalDistanceQuery[0]?.count || 0,
+    };
   }
 
   // Article operations
