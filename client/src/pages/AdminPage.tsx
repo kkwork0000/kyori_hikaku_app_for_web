@@ -539,7 +539,7 @@ export default function AdminPage() {
                 <Button
                   onClick={() => toggleTestModeMutation.mutate()}
                   disabled={toggleTestModeMutation.isPending}
-                  variant={testModeData?.isTestMode ? "secondary" : "default"}
+                  variant={testModeData?.isTestMode ? "default" : "secondary"}
                   className="w-full"
                 >
                   {toggleTestModeMutation.isPending ? (
