@@ -57,6 +57,19 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
+      {/* i-mobile Ad Network Test Banner - Top of Page */}
+      <div className="w-full bg-gray-50 p-4 rounded-lg border-2 border-dashed border-blue-300">
+        <div className="text-center mb-2">
+          <span className="text-sm text-blue-600 font-medium">【テスト広告】i-mobile Ad Network</span>
+        </div>
+        <div id="im-f13988eae2e7451383cb6a95eda8ce0b">
+          <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
+          <script dangerouslySetInnerHTML={{
+            __html: `(window.adsbyimobile=window.adsbyimobile||[]).push({pid:83741,mid:584646,asid:1901053,type:"banner",display:"inline",elementid:"im-f13988eae2e7451383cb6a95eda8ce0b"})`
+          }} />
+        </div>
+      </div>
+      
       <DistanceForm />
       
       {/* Usage Limit Info */}
