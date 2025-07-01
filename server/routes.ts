@@ -844,6 +844,108 @@ ${allUrls.map(url => `  <url>
     }
   });
 
+  // Admin: Get contacts with pagination
+  app.get("/api/admin/contacts", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const result = await storage.getAllContacts(page, limit);
+      res.json(result);
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "問い合わせの取得に失敗しました" 
+      });
+    }
+  });
+
+  // Admin: Get single contact by ID
+  app.get("/api/admin/contacts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contact = await storage.getContactById(id);
+      
+      if (!contact) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "問い合わせが見つかりません" 
+        });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error('Failed to fetch contact:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "問い合わせの取得に失敗しました" 
+      });
+    }
+  });
+
+  // Admin: Update contact status
+  app.put("/api/admin/contacts/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "無効なステータスです" 
+        });
+      }
+      
+      const contact = await storage.updateContactStatus(id, status);
+      
+      if (!contact) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "問い合わせが見つかりません" 
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        contact,
+        message: "ステータスを更新しました" 
+      });
+    } catch (error) {
+      console.error('Failed to update contact status:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "ステータスの更新に失敗しました" 
+      });
+    }
+  });
+
+  // Admin: Delete contact
+  app.delete("/api/admin/contacts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteContact(id);
+      
+      if (!success) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "問い合わせが見つかりません" 
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "問い合わせを削除しました" 
+      });
+    } catch (error) {
+      console.error('Failed to delete contact:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "問い合わせの削除に失敗しました" 
+      });
+    }
+  });
+
   // Admin: Get test mode status
   app.get("/api/admin/test-mode", async (req, res) => {
     try {

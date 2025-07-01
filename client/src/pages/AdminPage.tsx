@@ -87,6 +87,50 @@ export default function AdminPage() {
     enabled: isLoggedIn,
   });
 
+  // 問い合わせ一覧クエリ
+  const { data: contactsData, refetch: refetchContacts } = useQuery({
+    queryKey: ["/api/admin/contacts", contactCurrentPage],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/contacts?page=${contactCurrentPage}&limit=${contactItemsPerPage}`);
+      if (!response.ok) throw new Error("Failed to fetch contacts");
+      return response.json();
+    },
+    enabled: isLoggedIn,
+  });
+
+  // 問い合わせステータス更新ミューテーション
+  const updateContactStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const response = await apiRequest("PUT", `/api/admin/contacts/${id}/status`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "更新完了",
+        description: "ステータスを更新しました。",
+      });
+      refetchContacts();
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "ステータスの更新に失敗しました。",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // フィルタリングされた問い合わせデータ
+  const filteredContacts = contactsData?.contacts
+    ? contactsData.contacts.filter((contact: any) =>
+        contact.name.toLowerCase().includes(contactSearchQuery.toLowerCase()) ||
+        contact.subject.toLowerCase().includes(contactSearchQuery.toLowerCase()) ||
+        contact.inquiryNumber.toLowerCase().includes(contactSearchQuery.toLowerCase())
+      )
+    : [];
+
+  const contactTotalPages = Math.ceil((contactsData?.total || 0) / contactItemsPerPage);
+
   // フィルタリングとソートされた記事データ
   const filteredAndSortedArticles = articlesData?.articles
     ? articlesData.articles
@@ -433,6 +477,135 @@ export default function AdminPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="contacts" className="mt-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-text-primary">問い合わせ管理</h3>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="問い合わせ番号、名前、件名で検索..."
+                    value={contactSearchQuery}
+                    onChange={(e) => setContactSearchQuery(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 問い合わせ一覧テーブル */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        問い合わせ番号
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        日時
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        名前
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        件名
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ステータス
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        操作
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredContacts.map((contact: any) => (
+                      <tr key={contact.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-mono text-blue-600">
+                          {contact.inquiryNumber}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(contact.createdAt).toLocaleString('ja-JP')}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {contact.name}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
+                          {contact.subject}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            contact.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            contact.status === 'reviewed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {contact.status === 'pending' ? '未対応' :
+                             contact.status === 'reviewed' ? '確認済み' : '解決済み'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedContact(contact);
+                              setContactDetailOpen(true);
+                            }}
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            詳細
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredContacts.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          問い合わせがありません
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ページネーション */}
+            {contactTotalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContactCurrentPage(contactCurrentPage - 1)}
+                  disabled={contactCurrentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  前へ
+                </Button>
+                
+                <span className="text-sm text-gray-600">
+                  {contactCurrentPage} / {contactTotalPages} ページ
+                </span>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContactCurrentPage(contactCurrentPage + 1)}
+                  disabled={contactCurrentPage === contactTotalPages}
+                  className="flex items-center gap-1"
+                >
+                  次へ
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="cleanup" className="mt-6">
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-text-primary">データベース管理</h3>
@@ -746,6 +919,106 @@ export default function AdminPage() {
               disabled={deleteArticleMutation.isPending}
             >
               {deleteArticleMutation.isPending ? '削除中...' : '削除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 問い合わせ詳細モーダル */}
+      <Dialog open={contactDetailOpen} onOpenChange={setContactDetailOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>問い合わせ詳細</DialogTitle>
+          </DialogHeader>
+          {selectedContact && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-700">問い合わせ番号</h4>
+                  <p className="text-blue-600 font-mono">{selectedContact.inquiryNumber}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700">受信日時</h4>
+                  <p className="text-gray-900">{new Date(selectedContact.createdAt).toLocaleString('ja-JP')}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-700">お名前</h4>
+                  <p className="text-gray-900">{selectedContact.name}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700">メールアドレス</h4>
+                  <p className="text-gray-900">{selectedContact.email}</p>
+                </div>
+              </div>
+
+              {selectedContact.phone && (
+                <div>
+                  <h4 className="font-semibold text-gray-700">電話番号</h4>
+                  <p className="text-gray-900">{selectedContact.phone}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold text-gray-700">件名</h4>
+                <p className="text-gray-900">{selectedContact.subject}</p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-700">お問い合わせ内容</h4>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedContact.message}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-700 mb-2">ステータス</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedContact.status === 'pending' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateContactStatusMutation.mutate({ 
+                      id: selectedContact.id, 
+                      status: 'pending' 
+                    })}
+                    disabled={updateContactStatusMutation.isPending}
+                  >
+                    未対応
+                  </Button>
+                  <Button
+                    variant={selectedContact.status === 'reviewed' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateContactStatusMutation.mutate({ 
+                      id: selectedContact.id, 
+                      status: 'reviewed' 
+                    })}
+                    disabled={updateContactStatusMutation.isPending}
+                  >
+                    確認済み
+                  </Button>
+                  <Button
+                    variant={selectedContact.status === 'resolved' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateContactStatusMutation.mutate({ 
+                      id: selectedContact.id, 
+                      status: 'resolved' 
+                    })}
+                    disabled={updateContactStatusMutation.isPending}
+                  >
+                    解決済み
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setContactDetailOpen(false)}
+            >
+              閉じる
             </Button>
           </DialogFooter>
         </DialogContent>
