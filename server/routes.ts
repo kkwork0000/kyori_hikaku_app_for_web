@@ -151,6 +151,114 @@ ${allUrls.map(url => `  <url>
     });
   });
 
+  // Get reCAPTCHA site key for frontend
+  app.get("/api/recaptcha-config", (req, res) => {
+    res.json({ siteKey: process.env.RECAPTCHA_SITE_KEY });
+  });
+
+  // Verify reCAPTCHA token
+  async function verifyRecaptcha(token: string): Promise<boolean> {
+    try {
+      const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+      if (!secretKey) {
+        console.error('RECAPTCHA_SECRET_KEY not configured');
+        return false;
+      }
+
+      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `secret=${secretKey}&response=${token}`,
+      });
+
+      const data = await response.json();
+      return data.success === true;
+    } catch (error) {
+      console.error('reCAPTCHA verification error:', error);
+      return false;
+    }
+  }
+
+  // Send LINE notification
+  async function sendLineNotification(contact: any): Promise<void> {
+    try {
+      const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+      if (!channelAccessToken) {
+        console.error('LINE_CHANNEL_ACCESS_TOKEN not configured');
+        return;
+      }
+
+      const message = `新しいお問い合わせが届きました
+問い合わせ番号: ${contact.inquiryNumber}
+日時: ${new Date(contact.createdAt).toLocaleString('ja-JP')}
+お名前: ${contact.name}
+件名: ${contact.subject}`;
+
+      await fetch('https://api.line.me/v2/bot/message/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${channelAccessToken}`,
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              type: 'text',
+              text: message,
+            },
+          ],
+        }),
+      });
+    } catch (error) {
+      console.error('LINE notification error:', error);
+    }
+  }
+
+  // Contact form submission
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const { recaptchaToken, ...contactData } = req.body;
+      
+      // Verify reCAPTCHA
+      if (!recaptchaToken) {
+        return res.status(400).json({ message: "reCAPTCHA token is required" });
+      }
+
+      const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+      if (!isRecaptchaValid) {
+        return res.status(400).json({ message: "reCAPTCHA verification failed" });
+      }
+
+      // Validate contact data
+      const validatedData = insertContactSchema.parse(contactData);
+      
+      // Create contact
+      const contact = await storage.createContact(validatedData);
+      
+      // Send LINE notification (async, don't wait for completion)
+      sendLineNotification(contact).catch(error => {
+        console.error('Failed to send LINE notification:', error);
+      });
+      
+      res.json({ 
+        success: true, 
+        inquiryNumber: contact.inquiryNumber,
+        message: "お問い合わせを受け付けました" 
+      });
+    } catch (error) {
+      console.error('Contact form error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "入力データが不正です", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "サーバーエラーが発生しました" });
+    }
+  });
+
   // New endpoint: /get-distance for Google Distance Matrix API
   app.post("/get-distance", async (req, res) => {
     try {
