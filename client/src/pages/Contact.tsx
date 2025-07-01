@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Send, Check } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,8 +46,8 @@ export default function Contact() {
     message: ''
   });
   const [errors, setErrors] = useState<ContactFormErrors>({});
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [inquiryNumber, setInquiryNumber] = useState<string>('');
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const { toast } = useToast();
 
   // Get reCAPTCHA site key
@@ -77,17 +77,21 @@ export default function Contact() {
       newErrors.message = 'お問い合わせ内容を入力してください';
     }
 
-    if (!recaptchaToken) {
-      newErrors.recaptcha = 'reCAPTCHAを完了してください';
-    }
+    // reCAPTCHA v3では自動でトークンを生成するため、手動チェックは不要
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const submitMutation = useMutation({
-    mutationFn: async (data: ContactFormData & { recaptchaToken: string }) => {
-      return await apiRequest('/api/contacts', 'POST', data);
+    mutationFn: async (data: ContactFormData) => {
+      if (!executeRecaptcha) {
+        throw new Error('reCAPTCHAが初期化されていません');
+      }
+
+      const recaptchaToken = await executeRecaptcha('contact_form');
+      
+      return await apiRequest('/api/contacts', 'POST', { ...data, recaptchaToken });
     },
     onSuccess: (data: any) => {
       setInquiryNumber(data.inquiryNumber);
