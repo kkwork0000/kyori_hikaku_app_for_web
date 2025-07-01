@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLogin from "@/components/AdminLogin";
 import ArticleEditor from "@/components/ArticleEditor";
-import { LogOut, FileText, BarChart3, Edit, Trash2, Search, ChevronLeft, ChevronRight, Database, AlertTriangle } from "lucide-react";
+import ContactList from "@/components/ContactList";
+import { LogOut, FileText, BarChart3, Edit, Trash2, Search, ChevronLeft, ChevronRight, Database, AlertTriangle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -338,7 +339,7 @@ export default function AdminPage() {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="stats" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             統計情報
@@ -346,6 +347,10 @@ export default function AdminPage() {
           <TabsTrigger value="cleanup" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             DB管理
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            問い合わせ
           </TabsTrigger>
           <TabsTrigger value="articles" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -561,6 +566,13 @@ export default function AdminPage() {
                 <li>• データベースの容量効率化とパフォーマンス向上が目的です</li>
               </ul>
             </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="contacts" className="mt-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">問い合わせ管理</h3>
+            <ContactList isVisible={activeTab === "contacts"} />
           </div>
         </TabsContent>
         
