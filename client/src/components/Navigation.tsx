@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Home, HelpCircle, Newspaper, FileText, Shield, MessageCircle } from "lucide-react";
+import { Menu, X, Home, HelpCircle, Newspaper, FileText, Shield, Mail } from "lucide-react";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +12,7 @@ export default function Navigation() {
   const menuItems = [
     { path: "/", label: "トップページ（距離比較）", icon: Home },
     { path: "/articles", label: "紹介記事", icon: Newspaper },
-    { path: "/contact", label: "お問い合わせ", icon: MessageCircle },
+    { path: "/contact", label: "問い合わせ", icon: Mail },
     { path: "/terms", label: "利用規約", icon: FileText },
     { path: "/privacy", label: "プライバシーポリシー", icon: Shield },
   ];

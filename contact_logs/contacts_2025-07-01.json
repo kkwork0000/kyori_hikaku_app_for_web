@@ -1,0 +1,12 @@
+[
+  {
+    "timestamp": "2025-07-01T16:12:09.214Z",
+    "inquiryNumber": "INQ1751386328878117",
+    "name": "黒川テスト",
+    "email": "kk19970124@gmail.com",
+    "phone": "未入力",
+    "subject": "テスト問い合わせ",
+    "message": "問い合わせのテストです。",
+    "status": "new"
+  }
+]

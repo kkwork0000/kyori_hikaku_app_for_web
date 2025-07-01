@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import express from "express";
 import sharp from "sharp";
+import { processContactSubmission } from "./emailService";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -149,186 +150,6 @@ ${allUrls.map(url => `  <url>
       apiKey: FRONTEND_GOOGLE_MAPS_API_KEY,
       libraries: ['places', 'geometry']
     });
-  });
-
-  // Get reCAPTCHA site key for frontend
-  app.get("/api/recaptcha-config", (req, res) => {
-    res.json({ siteKey: process.env.RECAPTCHA_SITE_KEY });
-  });
-
-  // Verify reCAPTCHA token
-  async function verifyRecaptcha(token: string): Promise<boolean> {
-    try {
-      const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-      if (!secretKey) {
-        console.error('RECAPTCHA_SECRET_KEY not configured');
-        return false;
-      }
-
-      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `secret=${secretKey}&response=${token}`,
-      });
-
-      const data = await response.json();
-      return data.success === true;
-    } catch (error) {
-      console.error('reCAPTCHA verification error:', error);
-      return false;
-    }
-  }
-
-  // Send LINE notification
-  async function sendLineNotification(contact: any): Promise<void> {
-    try {
-      const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-      if (!channelAccessToken) {
-        console.error('LINE_CHANNEL_ACCESS_TOKEN not configured');
-        return;
-      }
-
-      const message = `新しいお問い合わせが届きました
-問い合わせ番号: ${contact.inquiryNumber}
-日時: ${new Date(contact.createdAt).toLocaleString('ja-JP')}
-お名前: ${contact.name}
-件名: ${contact.subject}`;
-
-      await fetch('https://api.line.me/v2/bot/message/broadcast', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${channelAccessToken}`,
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              type: 'text',
-              text: message,
-            },
-          ],
-        }),
-      });
-    } catch (error) {
-      console.error('LINE notification error:', error);
-    }
-  }
-
-  // Contact form submission
-  app.post("/api/contacts", async (req, res) => {
-    try {
-      const { recaptchaToken, ...contactData } = req.body;
-      
-      // Verify reCAPTCHA
-      if (!recaptchaToken) {
-        return res.status(400).json({ message: "reCAPTCHA token is required" });
-      }
-
-      const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-      if (!isRecaptchaValid) {
-        return res.status(400).json({ message: "reCAPTCHA verification failed" });
-      }
-
-      // Validate contact data
-      const validatedData = insertContactSchema.parse(contactData);
-      
-      // Create contact
-      const contact = await storage.createContact(validatedData);
-      
-      // Send LINE notification (async, don't wait for completion)
-      sendLineNotification(contact).catch(error => {
-        console.error('Failed to send LINE notification:', error);
-      });
-      
-      res.json({ 
-        success: true, 
-        inquiryNumber: contact.inquiryNumber,
-        message: "お問い合わせを受け付けました" 
-      });
-    } catch (error) {
-      console.error('Contact form error:', error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "入力データが不正です", 
-          errors: error.errors 
-        });
-      }
-      res.status(500).json({ message: "サーバーエラーが発生しました" });
-    }
-  });
-
-  // Get contacts list for admin (with pagination and search)
-  app.get("/api/admin/contacts", async (req, res) => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const search = req.query.search as string;
-      
-      const contacts = await storage.getAllContacts(page, limit, search);
-      res.json(contacts);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-      res.status(500).json({ message: "問い合わせ一覧の取得に失敗しました" });
-    }
-  });
-
-  // Get single contact detail for admin
-  app.get("/api/admin/contacts/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const contact = await storage.getContactById(id);
-      
-      if (!contact) {
-        return res.status(404).json({ message: "問い合わせが見つかりません" });
-      }
-      
-      res.json(contact);
-    } catch (error) {
-      console.error('Error fetching contact:', error);
-      res.status(500).json({ message: "問い合わせの取得に失敗しました" });
-    }
-  });
-
-  // Update contact status
-  app.put("/api/admin/contacts/:id/status", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { status } = req.body;
-      
-      if (!['pending', 'reviewed', 'resolved'].includes(status)) {
-        return res.status(400).json({ message: "無効なステータスです" });
-      }
-      
-      const contact = await storage.updateContactStatus(id, status);
-      
-      if (!contact) {
-        return res.status(404).json({ message: "問い合わせが見つかりません" });
-      }
-      
-      res.json(contact);
-    } catch (error) {
-      console.error('Error updating contact status:', error);
-      res.status(500).json({ message: "ステータスの更新に失敗しました" });
-    }
-  });
-
-  // Delete contact
-  app.delete("/api/admin/contacts/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const deleted = await storage.deleteContact(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "問い合わせが見つかりません" });
-      }
-      
-      res.json({ message: "問い合わせを削除しました" });
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      res.status(500).json({ message: "問い合わせの削除に失敗しました" });
-    }
   });
 
   // New endpoint: /get-distance for Google Distance Matrix API
@@ -951,6 +772,56 @@ ${allUrls.map(url => `  <url>
     } catch (error) {
       console.error('Error generating sitemap:', error);
       res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // Contact form submission endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      // Validate input data
+      const contactData = insertContactSchema.extend({
+        subject: z.string().min(1, "件名は必須です"),
+        name: z.string().min(1, "お名前は必須です"),
+        email: z.string().email("正しいメールアドレスを入力してください"),
+        message: z.string().min(10, "お問い合わせ内容は10文字以上で入力してください"),
+        phone: z.string().optional()
+      }).parse(req.body);
+
+      // Save to database and get inquiry number
+      const contact = await storage.createContact(contactData);
+
+      // Prepare email data
+      const emailData = {
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone || '',
+        subject: contact.subject,
+        message: contact.message,
+        inquiryNumber: contact.inquiryNumber
+      };
+
+      // Process contact submission (log and prepare email content)
+      const processResult = await processContactSubmission(emailData);
+
+      res.json({
+        success: true,
+        inquiryNumber: contact.inquiryNumber,
+        logged: processResult.logged,
+        autoReplyContent: processResult.autoReplyContent
+      });
+    } catch (error) {
+      console.error('Contact form error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: "入力内容に不備があります",
+          errors: error.errors
+        });
+      }
+      res.status(500).json({
+        success: false,
+        message: "お問い合わせの送信に失敗しました"
+      });
     }
   });
 

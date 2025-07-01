@@ -38,7 +38,7 @@ export interface IStorage {
 
   // Contact operations
   createContact(contact: InsertContact): Promise<Contact>;
-  getAllContacts(page?: number, limit?: number, search?: string): Promise<{ contacts: Contact[], total: number }>;
+  getAllContacts(page?: number, limit?: number): Promise<{ contacts: Contact[], total: number }>;
   getContactById(id: number): Promise<Contact | undefined>;
   updateContactStatus(id: number, status: string): Promise<Contact | undefined>;
   deleteContact(id: number): Promise<boolean>;
@@ -279,26 +279,19 @@ export class DatabaseStorage implements IStorage {
     return contact;
   }
 
-  async getAllContacts(page: number = 1, limit: number = 10, search?: string): Promise<{ contacts: Contact[], total: number }> {
+  async getAllContacts(page: number = 1, limit: number = 10): Promise<{ contacts: Contact[], total: number }> {
     const offset = (page - 1) * limit;
-    
-    let whereClause;
-    if (search) {
-      whereClause = sql`${contacts.name} ILIKE ${'%' + search + '%'} OR ${contacts.email} ILIKE ${'%' + search + '%'} OR ${contacts.subject} ILIKE ${'%' + search + '%'} OR ${contacts.inquiryNumber} ILIKE ${'%' + search + '%'}`;
-    }
     
     const [contactsResult, totalResult] = await Promise.all([
       db
         .select()
         .from(contacts)
-        .where(whereClause)
         .orderBy(desc(contacts.createdAt))
         .limit(limit)
         .offset(offset),
       db
         .select({ count: sql<number>`count(*)` })
         .from(contacts)
-        .where(whereClause)
     ]);
 
     return {
