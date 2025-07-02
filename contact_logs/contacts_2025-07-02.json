@@ -1,0 +1,12 @@
+[
+  {
+    "timestamp": "2025-07-02T18:17:30.812Z",
+    "inquiryNumber": "INQ1751480250460083",
+    "name": "テスト",
+    "email": "test@gmail.com",
+    "phone": "000-0000-0000",
+    "subject": "テスト",
+    "message": "テストです。テストです。テストです。",
+    "status": "new"
+  }
+]

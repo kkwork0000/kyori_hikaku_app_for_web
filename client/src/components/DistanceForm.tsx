@@ -135,9 +135,12 @@ export default function DistanceForm() {
       return response.json();
     },
     onSuccess: (data) => {
+      // 利用制限チェックを一時的に無効化
+      /*
       if (data.usageCount >= 3 && !isTestUser(userId)) {
         setShowAdModal(true);
       } else {
+      */
         // Proceed with calculation
         if (pendingCalculation) {
           console.log("Sending calculation with settings:", pendingCalculation);
@@ -157,7 +160,7 @@ export default function DistanceForm() {
           });
           setPendingCalculation(null);
         }
-      }
+      // }
     },
   });
 
@@ -224,6 +227,8 @@ export default function DistanceForm() {
     checkUsageMutation.mutate();
   };
 
+  // 広告完了ハンドラー（一時的に無効化）
+  /*
   const handleAdComplete = () => {
     setShowAdModal(false);
     if (pendingCalculation) {
@@ -235,6 +240,7 @@ export default function DistanceForm() {
       setPendingCalculation(null);
     }
   };
+  */
 
   // カスタムルート設定があるかチェック
   const hasCustomRouteSettings = () => {
