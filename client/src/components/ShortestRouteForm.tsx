@@ -17,6 +17,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleMaps } from "@/hooks/use-google-maps";
+import PlaceAutocomplete from "./PlaceAutocomplete";
 
 interface GeocodingResult {
   name: string;
@@ -163,15 +164,22 @@ export default function ShortestRouteForm() {
   const openGoogleMaps = () => {
     if (!routeResult) return;
 
-    const waypoints = routeResult.optimizedOrder
-      .map((index) => routeResult.waypoints[index])
+    // 最適化されたルート順序に基づいて経由地を作成
+    const orderedWaypoints = routeResult.optimizedOrder.map((index) => routeResult.waypoints[index]);
+    
+    // 最後の目的地を取得
+    const lastWaypoint = orderedWaypoints[orderedWaypoints.length - 1];
+    
+    // 経由地は最後の目的地を除く全ての地点
+    const waypoints = orderedWaypoints
+      .slice(0, -1) // 最後の目的地を除く
       .map((wp) => encodeURIComponent(wp.address))
       .join("|");
 
     const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
       origin,
     )}&destination=${encodeURIComponent(
-      routeResult.waypoints[routeResult.optimizedOrder[routeResult.optimizedOrder.length - 1]].address,
+      lastWaypoint.address,
     )}&waypoints=${waypoints}`;
 
     window.open(url, "_blank");
@@ -184,14 +192,24 @@ export default function ShortestRouteForm() {
   const recreateRoute = () => {
     if (!routeResult) return;
 
-    const destinationNames = routeResult.waypoints.map((wp) => wp.name);
-    setDestinationsText(destinationNames.join("、"));
-    setShowResults(false);
-    setRouteResult(null);
+    // 最適化されたルート順序に基づいて施設名を取得
+    const orderedDestinationNames = routeResult.optimizedOrder
+      .map((index) => routeResult.waypoints[index])
+      .map((wp) => wp.name);
+    
+    setDestinationsText(orderedDestinationNames.join("、"));
+    
+    // 最適化されたルート順序で再作成
+    const destinations = orderedDestinationNames;
+    
+    createRouteMutation.mutate({
+      origin: origin.trim(),
+      destinations,
+    });
 
     toast({
-      title: "編集モードに戻りました",
-      description: "目的地を再編集してルートを再作成してください",
+      title: "ルートを再作成しています",
+      description: "最適化されたルート順序で再計算中です",
     });
   };
 
@@ -208,23 +226,15 @@ export default function ShortestRouteForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Origin Input */}
           <div>
-            <Label htmlFor="origin" className="text-sm font-medium text-text-primary">
-              出発地 *
-            </Label>
-            <div className="relative mt-1">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                id="origin"
-                type="text"
-                placeholder="例：東京駅、渋谷区神宮前1-1-1"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                className={`pl-10 ${errors.origin ? "border-red-500" : ""}`}
-              />
-            </div>
-            {errors.origin && (
-              <p className="text-red-500 text-xs mt-1">{errors.origin}</p>
-            )}
+            <PlaceAutocomplete
+              id="origin"
+              label="出発地"
+              value={origin}
+              onChange={(value) => setOrigin(value)}
+              placeholder="例：東京駅、渋谷区神宮前1-1-1"
+              required
+              error={errors.origin}
+            />
           </div>
 
           {/* Destinations Input */}
