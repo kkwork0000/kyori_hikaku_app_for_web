@@ -89,6 +89,7 @@ export function useGoogleMapsDirections({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [directions, setDirections] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   // マップを初期化
   useEffect(() => {
@@ -109,6 +110,13 @@ export function useGoogleMapsDirections({
           fullscreenControl: false,
           streetViewControl: false,
         });
+        
+        // マップの初期化完了を待つ
+        window.google.maps.event.addListenerOnce(newMap, 'idle', () => {
+          console.log('地図初期化完了: idle イベント発火');
+          setIsMapReady(true);
+        });
+        
         console.log('地図初期化完了:', newMap);
         setMap(newMap);
         
@@ -130,165 +138,139 @@ export function useGoogleMapsDirections({
     }
   }, [window.google, mapRef.current]);
 
-  // マーカーを追加
-  useEffect(() => {
-    if (!map || !origin || !destination || !window.google) return;
+  // この useEffect は削除（ルート表示と統合したため）
 
-    const addMarkersFromPolyline = async () => {
+  // ルートを表示（マップ準備完了後）
+  useEffect(() => {
+    // 少し遅延してルート表示を実行（マップ初期化の確実な完了を待つ）
+    const displayRoute = () => {
+      if (!map || !isMapReady || !origin || !destination || !window.google) {
+        console.log('ルート表示スキップ:', { 
+          hasMap: !!map, 
+          isMapReady, 
+          hasOrigin: !!origin, 
+          hasDestination: !!destination,
+          hasGoogle: !!window.google 
+        });
+        return;
+      }
+
+      console.log('ルート表示を開始します');
+
       try {
+        // 前のルートを消去
+        if (directions) {
+          if (directions.setMap) {
+            directions.setMap(null);
+          }
+        }
+
         // 既存のマーカーを削除
         if (map.markers) {
           map.markers.forEach((marker: any) => marker.setMap(null));
         }
         map.markers = [];
 
-        // サーバーからルート情報を取得してマーカー位置を取得
-        const response = await fetch('/api/get-routes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            origin,
-            destination,
-            mode: travelMode,
-            avoidTolls: false
-          })
-        });
+        if (polyline && window.google?.maps?.geometry?.encoding) {
+          try {
+            console.log('ポリラインを表示します');
+            // ポリラインでルートを描画（APIから取得したポリラインがある場合）
+            const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
+            const routePath = new window.google.maps.Polyline({
+              path: decodedPath,
+              strokeColor: '#1976D2',
+              strokeOpacity: 0.8,
+              strokeWeight: 5,
+            });
+            
+            routePath.setMap(map);
+            setDirections(routePath);
+            
+            // マーカーを追加
+            if (decodedPath.length > 0) {
+              const startPoint = decodedPath[0];
+              const endPoint = decodedPath[decodedPath.length - 1];
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.routes && data.routes.length > 0) {
-            // ポリラインから開始点と終了点を取得
-            const firstRoute = data.routes[0];
-            if (firstRoute.polyline) {
-              const decodedPath = window.google.maps.geometry.encoding.decodePath(firstRoute.polyline);
+              // 出発地マーカー
+              const originMarker = new window.google.maps.Marker({
+                position: startPoint,
+                map: map,
+                title: `出発地: ${origin}`,
+                icon: {
+                  url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                }
+              });
               
-              if (decodedPath.length > 0) {
-                const startPoint = decodedPath[0];
-                const endPoint = decodedPath[decodedPath.length - 1];
+              // 目的地マーカー
+              const destMarker = new window.google.maps.Marker({
+                position: endPoint,
+                map: map,
+                title: `目的地: ${destination}`,
+                icon: {
+                  url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                }
+              });
 
-                // 出発地マーカー
-                const originMarker = new window.google.maps.Marker({
-                  position: startPoint,
-                  map: map,
-                  title: `出発地: ${origin}`,
-                  icon: {
-                    url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                  }
-                });
-                
-                const originInfoWindow = new window.google.maps.InfoWindow({
-                  content: `<div><strong>出発地</strong><br>${origin}</div>`
-                });
-                
-                originMarker.addListener("click", () => {
-                  originInfoWindow.open(map, originMarker);
-                });
+              if (!map.markers) map.markers = [];
+              map.markers.push(originMarker, destMarker);
+              
+              console.log('マーカーとルートの表示完了');
+            }
+            
+            // マップの範囲を設定
+            const bounds = new window.google.maps.LatLngBounds();
+            decodedPath.forEach(point => bounds.extend(point));
+            map.fitBounds(bounds);
+          } catch (err) {
+            console.error('ポリライン表示エラー:', err);
+            setError('ルートの表示に失敗しました');
+          }
+        } else {
+          // DirectionsServiceを使用してルートを取得
+          const directionsService = new window.google.maps.DirectionsService();
+          const directionsRenderer = new window.google.maps.DirectionsRenderer({
+            map,
+            suppressMarkers: false,
+            preserveViewport: false,
+            polylineOptions: {
+              strokeColor: '#1976D2',
+              strokeWeight: 5,
+            },
+          });
 
-                // 目的地マーカー
-                const destMarker = new window.google.maps.Marker({
-                  position: endPoint,
-                  map: map,
-                  title: `目的地: ${destination}`,
-                  icon: {
-                    url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                  }
-                });
-                
-                const destInfoWindow = new window.google.maps.InfoWindow({
-                  content: `<div><strong>目的地</strong><br>${destination}</div>`
-                });
-                
-                destMarker.addListener("click", () => {
-                  destInfoWindow.open(map, destMarker);
-                });
-
-                if (!map.markers) map.markers = [];
-                map.markers.push(originMarker, destMarker);
+          directionsService.route(
+            {
+              origin,
+              destination,
+              travelMode: window.google.maps.TravelMode[travelMode.toUpperCase()],
+              provideRouteAlternatives: true,
+            },
+            (result, status) => {
+              if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+                directionsRenderer.setRouteIndex(selectedRoute);
+                setDirections(directionsRenderer);
+                setError(null);
+                console.log('DirectionsServiceでルート表示完了');
+              } else {
+                console.error('Directions request failed:', status);
+                setError('ルートの取得に失敗しました');
               }
             }
-          }
+          );
         }
-      } catch (error) {
-        console.log('マーカー追加でエラーが発生しましたが、処理を継続します:', error);
+      } catch (err) {
+        console.error('Directions error:', err);
+        setError('ルート表示に失敗しました');
       }
     };
 
-    addMarkersFromPolyline();
-  }, [map, origin, destination, travelMode]);
-
-  // ルートを表示
-  useEffect(() => {
-    if (!map || !origin || !destination || !window.google) return;
-
-    try {
-      // 前のルートを消去
-      if (directions) {
-        if (directions.setMap) {
-          directions.setMap(null);
-        }
-      }
-
-      if (polyline && window.google?.maps?.geometry?.encoding) {
-        try {
-          console.log('ポリラインを表示します');
-          // ポリラインでルートを描画（APIから取得したポリラインがある場合）
-          const decodedPath = window.google.maps.geometry.encoding.decodePath(polyline);
-          const routePath = new window.google.maps.Polyline({
-            path: decodedPath,
-            strokeColor: '#1976D2',
-            strokeOpacity: 0.8,
-            strokeWeight: 5,
-          });
-          
-          routePath.setMap(map);
-          setDirections(routePath);
-          
-          // マップの範囲を設定
-          const bounds = new window.google.maps.LatLngBounds();
-          decodedPath.forEach(point => bounds.extend(point));
-          map.fitBounds(bounds);
-        } catch (err) {
-          console.error('ポリライン表示エラー:', err);
-          setError('ルートの表示に失敗しました');
-        }
-      } else {
-        // DirectionsServiceを使用してルートを取得
-        const directionsService = new window.google.maps.DirectionsService();
-        const directionsRenderer = new window.google.maps.DirectionsRenderer({
-          map,
-          suppressMarkers: false,
-          preserveViewport: false,
-          polylineOptions: {
-            strokeColor: '#1976D2',
-            strokeWeight: 5,
-          },
-        });
-
-        directionsService.route(
-          {
-            origin,
-            destination,
-            travelMode: window.google.maps.TravelMode[travelMode.toUpperCase()],
-            provideRouteAlternatives: true,
-          },
-          (result, status) => {
-            if (status === 'OK') {
-              directionsRenderer.setDirections(result);
-              directionsRenderer.setRouteIndex(selectedRoute);
-              setDirections(directionsRenderer);
-              setError(null);
-            } else {
-              console.error('Directions request failed:', status);
-              setError('ルートの取得に失敗しました');
-            }
-          }
-        );
-      }
-    } catch (err) {
-      console.error('Directions error:', err);
-      setError('ルート表示に失敗しました');
+    // マップが準備完了している場合、少し遅延してルートを表示
+    if (map && isMapReady) {
+      const timeoutId = setTimeout(displayRoute, 200);
+      return () => clearTimeout(timeoutId);
     }
-  }, [map, origin, destination, travelMode, selectedRoute, polyline]);
+  }, [map, isMapReady, origin, destination, travelMode, selectedRoute, polyline]);
 
   return { mapRef, error };
 }
