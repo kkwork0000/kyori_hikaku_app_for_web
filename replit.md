@@ -151,6 +151,10 @@ Changelog:
   - ユーザーアップロードの「アイコン.png」をファビコンとして実装
   - 地図とルート表示用のアイコンで、距離比較アプリに適したデザイン
   - client/public/に配置してindex.htmlでファビコンリンクを追加
+- September 30, 2025. 管理画面の複数パスワード対応
+  - 環境変数ADMIN_PASSWORDでカンマ区切りで複数パスワードを設定可能に
+  - 設定されたパスワードのいずれかでログイン可能
+  - 実装場所: server/routes.ts (ADMIN_PASSWORDS配列化とログイン処理変更)
 ```
 
 ## User Preferences

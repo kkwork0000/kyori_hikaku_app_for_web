@@ -12,7 +12,11 @@ import { processContactSubmission } from "./emailService";
 import { sendLineNotification } from "./lineService";
 import { verifyRecaptcha } from "./recaptchaService";
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+// 複数のパスワードをカンマ区切りで設定可能（例: "password1,password2"）
+const ADMIN_PASSWORDS = (process.env.ADMIN_PASSWORD || "admin123")
+  .split(',')
+  .map(pwd => pwd.trim())
+  .filter(pwd => pwd.length > 0);
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
 const FRONTEND_GOOGLE_MAPS_API_KEY = "AIzaSyDV-CnRnVjrMhv6-hAFFJgq7Qx_ze2S4FA";
 
@@ -496,7 +500,8 @@ ${allUrls.map(url => `  <url>
     try {
       const { password } = req.body;
       
-      if (password === ADMIN_PASSWORD) {
+      // 設定されているパスワードのいずれかと一致すればログイン可
+      if (ADMIN_PASSWORDS.includes(password)) {
         res.json({ success: true });
       } else {
         res.status(401).json({ message: "Incorrect password" });
